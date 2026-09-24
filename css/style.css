@@ -157,7 +157,10 @@ button[aria-pressed="true"] { background: var(--accent); border-color: var(--acc
   width: 22px; height: 22px; border-radius: 6px; background: var(--accent);
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7'/%3E%3C/svg%3E");
 }
-.lang-btn { margin-left: auto; min-height: 36px; padding: 0 12px; font-weight: 500; }
+.version { margin-left: auto; font-size: 0.75rem; color: var(--muted); text-decoration: none; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.version:hover { color: var(--accent); text-decoration: underline; }
+.version span + span::before { content: " · "; }
+.lang-btn { min-height: 36px; padding: 0 12px; font-weight: 500; }
 .steps ol { display: flex; gap: 4px; list-style: none; margin: 0; padding: 0; flex-wrap: wrap; }
 .steps li { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; color: var(--muted); font-size: 0.9rem; }
 .steps li[aria-current="step"] { color: var(--text); background: var(--accent-wash); font-weight: 600; }
@@ -421,6 +424,10 @@ legend { font-weight: 700; padding: 0 6px; }
   :root { --gap: 12px; }
   main { padding: var(--gap); }
   .app-header { padding: 8px 12px; }
+  .steps { order: 3; flex-basis: 100%; }
+  .version { display: grid; text-align: right; line-height: 1.25; font-size: 0.7rem; }
+  .version span + span::before { content: none; }
+  .lang-btn { min-height: 36px; padding: 0 10px; font-size: 0.9rem; }
   .steps li { padding: 2px 8px; font-size: 0.8rem; }
   .play-bar { grid-template-columns: auto minmax(0, 1fr); padding: 8px 12px; gap: 6px 14px; }
   .controls { grid-column: 1 / -1; justify-content: space-between; flex-wrap: nowrap; }

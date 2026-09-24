@@ -5,6 +5,7 @@ export const zhTW = {
   skip: '跳到主要內容',
   tagline: '讓台灣這座孤島電網維持 60 Hz 一整天。',
   loading: '載入中…',
+  'version.title': '版本 {version}，發布日期 {date}。開啟更新紀錄。',
   'error.title': '無法載入遊戲資料',
   'error.hint': '如果你是直接從資料夾開啟 index.html，請改為執行 `npm start`，再開啟 http://localhost:8000。',
 

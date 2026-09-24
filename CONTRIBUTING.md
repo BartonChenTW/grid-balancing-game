@@ -45,6 +45,12 @@ A trip disconnects online units of `unitType`: `units` of them, or as many as ne
 
 Each language is a table with the same keys as the `en` table in `js/strings.js`; see `js/strings-zh-TW.js`. Add a file, import it in `strings.js`, and register it in `TABLES` and `LANGUAGES`. Scenario and day text can be translated with `scenario.<id>.name`, `scenario.<id>.description`, `scenario.<id>.dataNotes`, `day.<id>.name` and `day.<id>.description`. Missing keys fall back to English.
 
+## Release
+
+1. Bump the version in `js/version.js` (with the release date) and `package.json`.
+2. Add an entry at the top of `CHANGELOG.md` (`## X.Y.Z — YYYY-MM-DD`); `npm test` checks the three agree.
+3. Commit, tag and push: `git tag -a vX.Y.Z -m "…"` then `git push origin main --tags`.
+
 ## Test locally
 
 ```sh

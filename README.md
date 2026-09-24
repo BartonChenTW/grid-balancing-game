@@ -21,6 +21,8 @@ You are the grid operator. Demand rises and falls, the sun sets, typhoons shut d
 
 Add `?demo` to the URL (e.g. `http://localhost:8000/?demo`) to watch a scripted operator play.
 
+The version and release date are shown in the header; see [CHANGELOG.md](CHANGELOG.md) for what changed.
+
 The game is in **English and Traditional Chinese (繁體中文)**. It follows the browser language, and the button in the header switches between them.
 
 ### How a game works

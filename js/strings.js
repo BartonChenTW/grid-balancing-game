@@ -7,6 +7,7 @@ const en = {
   skip: 'Skip to main content',
   tagline: 'Keep Taiwan’s island grid at 60 Hz for one day.',
   loading: 'Loading…',
+  'version.title': 'Version {version}, released {date}. Open the changelog.',
   'error.title': 'The game data could not be loaded',
   'error.hint': 'If you opened index.html directly from a folder, run `npm start` and open http://localhost:8000 instead.',
 

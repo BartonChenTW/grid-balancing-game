@@ -6,6 +6,7 @@ import { buildWorld, loadGameData } from './scenarios.js';
 import { createSetup } from './setup.js';
 import { LANGUAGES, detectLanguage, getLanguage, saveLanguage, setLanguage, t, tOr } from './strings.js';
 import { createTutorial, tutorialSeen } from './tutorial.js';
+import { RELEASE_DATE, VERSION } from './version.js';
 
 const $ = (id) => document.getElementById(id);
 const SCREENS = ['loading', 'error', 'intro', 'setup', 'play'];
@@ -14,6 +15,13 @@ function applyStrings() {
   for (const node of document.querySelectorAll('[data-i18n]')) node.textContent = t(node.dataset.i18n);
   for (const node of document.querySelectorAll('[data-i18n-label]')) node.setAttribute('aria-label', t(node.dataset.i18nLabel));
   document.title = `${t('title')} — ${t('tagline')}`;
+  const version = $('version');
+  const number = document.createElement('span');
+  number.textContent = `v${VERSION}`;
+  const date = document.createElement('span');
+  date.textContent = RELEASE_DATE;
+  version.replaceChildren(number, date);
+  version.title = t('version.title', { version: VERSION, date: RELEASE_DATE });
 }
 
 function show(screen) {

@@ -55,7 +55,7 @@ export const config = {
     maxStages: 4,
     stageDelayMin: 1, // minimum time between stages
     restoreAboveHz: 59.9, // reconnect customers once frequency recovers…
-    restoreDelayMin: 5, // …and has stayed there this long (per stage)
+    restoreDelayMin: 5, // …has stayed there this long (per stage), and reserve can carry the block
   },
 
   load: {
@@ -87,7 +87,7 @@ export const config = {
   custom: {
     peakRangeGW: [25, 90],
     defaultScenario: 'taiwan-2025',
-    reserveMarginPct: 10, // auto-commitment brings this much spare capacity online at midnight
+    reserveMarginPct: 5, // auto-commitment brings this much spare capacity online at midnight
     techs: [
       { type: 'nuclear', maxGW: 12, blockMW: 3000 },
       { type: 'coal', maxGW: 30, blockMW: 7000 },
@@ -118,6 +118,19 @@ export const config = {
     chartFps: 15,
     freqStripRangeHz: [58.5, 61.5],
     gaugeRangeHz: [58.5, 61.5],
-    forecastAheadMin: 1440,
+    forecastStepMin: 5, // resolution of forecast lines on the chart
+    chartCursorStepMin: 15, // arrow keys move the chart cursor this much
+    toastMs: 9000, // how long an event banner stays up (real time)
+    // Chart series, stacked bottom to top. Colours are CSS tokens --series-<id>.
+    chartGroups: [
+      { id: 'nuclear', types: ['nuclear'] },
+      { id: 'coal', types: ['coal'] },
+      { id: 'gas', types: ['gasCcgt', 'gasOcgt'] },
+      { id: 'hydro', types: ['hydro'] },
+      { id: 'wind', types: ['wind'] },
+      { id: 'solar', types: ['solar'] },
+      { id: 'storage', types: ['battery', 'pumpedHydro'] },
+      { id: 'other', types: ['oil', 'dsm'] }, // plus automatic response
+    ],
   },
 };

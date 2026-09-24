@@ -6,7 +6,7 @@ import { createState, forecastVariable, frequencyBand, profileAt, setSetpoint, s
 import { makeWorld, near, quiet, run, sandbox } from './helpers.js';
 
 const coal = (maxMW = 1000, extra = {}) => ({ type: 'coal', name: 'C', maxMW, initialState: 'online', ...extra });
-const gas = (maxMW = 1000) => ({ type: 'gasOcgt', name: 'G', maxMW, initialState: 'online' });
+const gas = (maxMW = 1000, name = 'G') => ({ type: 'gasOcgt', name, maxMW, initialState: 'online' });
 
 test('initial dispatch balances demand with online thermal units', () => {
   const world = makeWorld([coal(1000)], { loadMW: 700 });
@@ -90,17 +90,34 @@ test('frequency settles back towards 60 Hz once balance is restored', () => {
 });
 
 test('under-frequency load shedding disconnects 5% stages, then restores them', () => {
-  const world = makeWorld([coal(1000)], { loadMW: 1000 });
-  let state = setSetpoint(createState(world, quiet), world, 0, 900, quiet);
-  state = run(state, world, 15);
+  const world = makeWorld([coal(1000), gas(400, 'G')], { loadMW: 1200 });
+  let state = createState(world, quiet);
+  state = setSetpoint(state, world, 0, state.units[0].outputMW - 100, quiet);
+  state = setSetpoint(state, world, 1, state.units[1].outputMW - 60, quiet);
+  state = run(state, world, 20);
   assert.ok(state.stats.shedStages >= 1, 'should have shed load');
   assert.ok(state.servedLoadMW < state.demandMW);
   assert.notEqual(state.status, 'blackout');
-  // Restore balance: generation matches the full demand again.
+  // Restore balance with headroom to spare: customers are reconnected.
   state = setSetpoint(state, world, 0, 1000, quiet);
-  state = run(state, world, 120);
+  for (let i = 0; i < 200 && state.shedStage > 0; i++) {
+    state = step(state, world, quiet);
+    // Keep the gas unit following the returning load.
+    state = setSetpoint(state, world, 1, state.units[1].outputMW + (60 - state.frequencyHz) * 2000, quiet);
+  }
   assert.equal(state.shedStage, 0);
   assert.ok(state.eventLog.some((e) => e.type === 'restore'));
+});
+
+test('customers are not reconnected without reserve to carry them', () => {
+  const world = makeWorld([coal(1000)], { loadMW: 1000 });
+  let state = setSetpoint(createState(world, quiet), world, 0, 900, quiet);
+  state = run(state, world, 15);
+  const stage = state.shedStage;
+  assert.ok(stage >= 1);
+  state = setSetpoint(state, world, 0, 1000, quiet); // at max: no headroom left
+  state = run(state, world, 120);
+  assert.ok(state.shedStage >= 1, 'should stay shed while there is no reserve');
 });
 
 test('a large shortfall causes a blackout and stops the simulation', () => {

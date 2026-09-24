@@ -478,7 +478,12 @@ export function step(state, world, cfg = defaultConfig) {
     shedTimer = u.stageDelayMin;
     restoreTimer = 0;
     eventLog = [...eventLog, { minute, type: 'shed', stage: shedStage }];
-  } else if (shedStage > 0 && frequencyHz >= u.restoreAboveHz) {
+  } else if (
+    shedStage > 0 &&
+    frequencyHz >= u.restoreAboveHz &&
+    // Operators reconnect a block only when online headroom can carry it.
+    s.reserve.upMW >= s.demandMW * (u.stagePct / 100)
+  ) {
     restoreTimer += stepMin;
     if (restoreTimer >= u.restoreDelayMin) {
       shedStage--;

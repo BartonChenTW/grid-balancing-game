@@ -35,7 +35,7 @@ Scenarios and days can list events:
 
 ## Translate
 
-Copy the `en` table in `js/strings.js` to a new table (for example `zhTW`), translate the values, and register it in `TABLES`. Scenario and day names can be translated with `scenario.<id>.name`, `scenario.<id>.description`, `day.<id>.name` and `day.<id>.description`.
+Each language is a table with the same keys as the `en` table in `js/strings.js`; see `js/strings-zh-TW.js`. Add a file, import it in `strings.js`, and register it in `TABLES` and `LANGUAGES`. Scenario and day text can be translated with `scenario.<id>.name`, `scenario.<id>.description`, `scenario.<id>.dataNotes`, `day.<id>.name` and `day.<id>.description`. Missing keys fall back to English.
 
 ## Test locally
 

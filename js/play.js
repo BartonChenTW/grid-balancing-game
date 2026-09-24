@@ -3,7 +3,7 @@
 import { createChart } from './chart.js';
 import { computeScore, pickLesson } from './score.js';
 import { createState, setSetpoint, startCommand, step, stopCommand } from './sim.js';
-import { formatClock, formatDuration, formatEnergy, formatNumber, t } from './strings.js';
+import { formatClock, formatDuration, formatEnergy, formatNumber, t, unitName } from './strings.js';
 import { canAdjust, canStart, canStop, setpointRange } from './units.js';
 
 const $ = (id) => document.getElementById(id);
@@ -135,12 +135,13 @@ export function createPlay({ cfg, onQuit, operator = null }) {
       const group = groupOf[unit.type] ?? 'other';
       const li = el('li', 'unit');
       li.setAttribute('role', 'group');
-      li.setAttribute('aria-label', unit.name);
+      const label = unitName(unit.name, unit.type);
+      li.setAttribute('aria-label', label);
       li.style.setProperty('--key', `var(--series-${group})`);
 
       const head = el('div', 'unit-head');
       const sw = el('span', 'swatch');
-      const name = el('span', 'unit-name', unit.name);
+      const name = el('span', 'unit-name', label);
       head.append(sw, name);
       if (i < 10) head.append(el('span', 'unit-key', `[${(i + 1) % 10}]`));
       const status = el('span', 'status');
@@ -168,8 +169,8 @@ export function createPlay({ cfg, onQuit, operator = null }) {
       const minus = el('button', 'adj', '−');
       const plus = el('button', 'adj', '+');
       minus.type = plus.type = 'button';
-      minus.setAttribute('aria-label', t('unit.decrease', { name: unit.name }));
-      plus.setAttribute('aria-label', t('unit.increase', { name: unit.name }));
+      minus.setAttribute('aria-label', t('unit.decrease', { name: label }));
+      plus.setAttribute('aria-label', t('unit.increase', { name: label }));
       holdButton(minus, () => nudge(i, -1));
       holdButton(plus, () => nudge(i, 1));
       buttons.append(minus, plus);
@@ -245,7 +246,7 @@ export function createPlay({ cfg, onQuit, operator = null }) {
       const label = unit.status === 'online' ? t('unit.stop') : unit.status === 'starting' ? t('unit.cancel') : t('unit.start');
       setText(c.power, label);
       c.power.disabled = !live || !(canStop(unit, type) || canStart(unit, type));
-      c.power.setAttribute('aria-label', `${label} ${unit.name}`);
+      c.power.setAttribute('aria-label', `${label} ${unitName(unit.name, unit.type)}`);
     }
   }
 
@@ -277,7 +278,7 @@ export function createPlay({ cfg, onQuit, operator = null }) {
   function describeEvent(e) {
     switch (e.type) {
       case 'trip':
-        return [t('event.trip', { unit: e.unit, mw: formatNumber(e.lostMW) }), e.note ? t(`note.${e.note}`) : ''];
+        return [t('event.trip', { unit: unitName(e.unit, state.units.find((u) => u.name === e.unit)?.type), mw: formatNumber(e.lostMW) }), e.note ? t(`note.${e.note}`) : ''];
       case 'clouds':
         return [t('event.clouds'), ''];
       case 'windCutout':

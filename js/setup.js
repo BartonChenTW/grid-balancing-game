@@ -247,7 +247,7 @@ export function createSetup({ data, cfg, onStart, onBack }) {
     $('summary').replaceChildren(...nodes);
 
     const notes = [];
-    if (scenario.dataNotes) notes.push(el('p', '', scenario.dataNotes));
+    if (scenario.dataNotes) notes.push(el('p', '', tOr(`scenario.${scenario.id}.dataNotes`, scenario.dataNotes)));
     if (scenario.sources?.length) {
       const ul = el('ul');
       for (const s of scenario.sources) {

@@ -1,5 +1,6 @@
-// All UI text. To translate, add a table (e.g. `zhTW`) with the same keys;
-// missing keys fall back to English.
+// All UI text. Each language is a table with the same keys (see
+// strings-zh-TW.js); missing keys fall back to English.
+import { zhTW } from './strings-zh-TW.js';
 
 const en = {
   title: 'Follow the Load',
@@ -211,11 +212,50 @@ const en = {
   'tutorial.5': 'Control time here. Pause any time (Space) to think. Good luck, operator!',
 };
 
-const TABLES = { en };
+const TABLES = { en, 'zh-TW': zhTW };
+export const LANGUAGES = [
+  { code: 'en', label: 'English', htmlLang: 'en' },
+  { code: 'zh-TW', label: '繁體中文', htmlLang: 'zh-Hant-TW' },
+];
+const LANG_KEY = 'ftl.lang';
 let lang = 'en';
 
 export function setLanguage(code) {
   if (TABLES[code]) lang = code;
+}
+
+export function getLanguage() {
+  return lang;
+}
+
+/** Saved choice, else the browser's language (any Chinese → zh-TW), else English. */
+export function detectLanguage() {
+  try {
+    const saved = localStorage.getItem(LANG_KEY);
+    if (saved && TABLES[saved]) return saved;
+  } catch {
+    // Storage unavailable: fall through to the browser language.
+  }
+  const browser = (typeof navigator !== 'undefined' && navigator.language) || 'en';
+  return browser.toLowerCase().startsWith('zh') ? 'zh-TW' : 'en';
+}
+
+export function saveLanguage(code) {
+  try {
+    localStorage.setItem(LANG_KEY, code);
+  } catch {
+    // Without storage the choice lasts for this page only.
+  }
+}
+
+/**
+ * Display name of a unit. Scenario files name units in English ("Gas CCGT A");
+ * in other languages show the translated type plus the block letter or number.
+ */
+export function unitName(name, type) {
+  if (lang === 'en') return name;
+  const suffix = name.match(/\s([A-Z0-9])$/);
+  return suffix ? `${t(`unitType.${type}`)} ${suffix[1]}` : t(`unitType.${type}`);
 }
 
 export function has(key) {

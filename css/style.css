@@ -35,7 +35,7 @@
   --radius: 12px;
   --radius-s: 8px;
   --gap: 16px;
-  --font: system-ui, -apple-system, "Segoe UI", "Noto Sans TC", sans-serif;
+  --font: system-ui, -apple-system, "Segoe UI", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -157,6 +157,7 @@ button[aria-pressed="true"] { background: var(--accent); border-color: var(--acc
   width: 22px; height: 22px; border-radius: 6px; background: var(--accent);
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7'/%3E%3C/svg%3E");
 }
+.lang-btn { margin-left: auto; min-height: 36px; padding: 0 12px; font-weight: 500; }
 .steps ol { display: flex; gap: 4px; list-style: none; margin: 0; padding: 0; flex-wrap: wrap; }
 .steps li { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; color: var(--muted); font-size: 0.9rem; }
 .steps li[aria-current="step"] { color: var(--text); background: var(--accent-wash); font-weight: 600; }

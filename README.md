@@ -21,6 +21,8 @@ You are the grid operator. Demand rises and falls, the sun sets, typhoons shut d
 
 Add `?demo` to the URL (e.g. `http://localhost:8000/?demo`) to watch a scripted operator play.
 
+The game is in **English and Traditional Chinese (繁體中文)**. It follows the browser language, and the button in the header switches between them.
+
 ### How a game works
 
 1. **About:** what the game is about and your goal.
@@ -86,7 +88,8 @@ js/units.js           unit state machine and limits (pure)
 js/scenarios.js       data loading, validation, world building, custom mix
 js/score.js           score and end-of-day lesson
 js/config.js          every tunable number
-js/strings.js         all UI text (English; ready for zh-TW)
+js/strings.js         all UI text (English) and language switching
+js/strings-zh-TW.js   繁體中文 text
 data/                 unit types, day types, Taiwan scenarios
 tools/                dev server, day generator, autopilot, balance report
 tests/                node --test suites

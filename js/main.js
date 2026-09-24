@@ -4,7 +4,7 @@ import { config } from './config.js';
 import { createPlay } from './play.js';
 import { buildWorld, loadGameData } from './scenarios.js';
 import { createSetup } from './setup.js';
-import { t, tOr } from './strings.js';
+import { LANGUAGES, detectLanguage, getLanguage, saveLanguage, setLanguage, t, tOr } from './strings.js';
 import { createTutorial, tutorialSeen } from './tutorial.js';
 
 const $ = (id) => document.getElementById(id);
@@ -13,7 +13,7 @@ const SCREENS = ['loading', 'error', 'intro', 'setup', 'play'];
 function applyStrings() {
   for (const node of document.querySelectorAll('[data-i18n]')) node.textContent = t(node.dataset.i18n);
   for (const node of document.querySelectorAll('[data-i18n-label]')) node.setAttribute('aria-label', t(node.dataset.i18nLabel));
-  document.title = `${t('title')}: ${t('tagline')}`;
+  document.title = `${t('title')} — ${t('tagline')}`;
 }
 
 function show(screen) {
@@ -26,7 +26,22 @@ function show(screen) {
   window.scrollTo(0, 0);
 }
 
+function setupLanguage() {
+  setLanguage(detectLanguage());
+  const current = LANGUAGES.find((l) => l.code === getLanguage()) ?? LANGUAGES[0];
+  document.documentElement.lang = current.htmlLang;
+  const other = LANGUAGES.find((l) => l.code !== current.code);
+  const button = $('lang-btn');
+  button.textContent = other.label;
+  button.lang = other.htmlLang;
+  button.addEventListener('click', () => {
+    saveLanguage(other.code);
+    location.reload();
+  });
+}
+
 async function main() {
+  setupLanguage();
   applyStrings();
   show('loading');
 

@@ -176,8 +176,8 @@ play link and data sources, GitHub Pages deployment check, `strings.js` ready fo
 
 ## 11. Status and decisions (2026-09-24)
 
-**Milestones:** M1–M5 are implemented; M6 is done except publishing (enable GitHub Pages)
-and the zh-TW translation.
+**Milestones:** M1–M6 are implemented, including a zh-TW translation with a language
+switch; publishing (enable GitHub Pages) is left to the repo owner.
 
 **Game flow (requested after M1):** three steps: 1 About (goal and lesson) → 2 Set up
 (fleet, day type, difficulty, custom mix) → 3 Operate. Planning ahead happens in the live
@@ -208,4 +208,5 @@ game by reading the forecast lines; there is no separate day-ahead phase.
   `js/score.js`, `data/days.json`, `tools/make-days.js`, `tools/autopilot.js`,
   `tools/balance-report.js`. `?demo` lets the autopilot play in the browser.
 
-**Next:** zh-TW strings; real 10-minute Taipower day curves; deploy to GitHub Pages.
+**Next:** real 10-minute Taipower day curves; deploy to GitHub Pages; playtest and tune
+difficulty with real players.

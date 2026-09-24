@@ -122,7 +122,7 @@ test('customers are not reconnected without reserve to carry them', () => {
 
 test('a large shortfall causes a blackout and stops the simulation', () => {
   const world = makeWorld([coal(1000)], { loadMW: 1000 });
-  const cfg = { ...quiet, ufls: { ...quiet.ufls, maxStages: 0 } };
+  const cfg = { ...quiet, ufls: { ...quiet.ufls, thresholdsHz: [] } };
   const state = run(setSetpoint(createState(world, cfg), world, 0, 400, cfg), world, 30, cfg);
   assert.equal(state.status, 'blackout');
   assert.equal(state.blackoutCause, 'low');

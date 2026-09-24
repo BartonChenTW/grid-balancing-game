@@ -49,11 +49,11 @@ export const config = {
   },
 
   // Under-frequency load shedding (UFLS): automatic relays disconnect
-  // customers in stages to stop a frequency collapse.
+  // customers in stages to stop a frequency collapse. Each stage trips the
+  // moment frequency crosses its threshold, even mid-step.
   ufls: {
     stagePct: 5, // % of demand disconnected per stage
-    maxStages: 4,
-    stageDelayMin: 1, // minimum time between stages
+    thresholdsHz: [59.5, 59.3, 59.1, 58.9],
     restoreAboveHz: 59.9, // reconnect customers once frequency recovers…
     restoreDelayMin: 5, // …has stayed there this long (per stage), and reserve can carry the block
   },

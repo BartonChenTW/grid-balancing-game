@@ -210,8 +210,12 @@ function derive(state, world, cfg) {
  * Automatic response: each responding group adds −(Δf / f0) / droop · S,
  * limited to its headroom. Groups are the assist governor (all online
  * dispatchable units) or, without assist, fast-response units (batteries).
+ *
+ * Under-frequency relays act inside the step: when f crosses the next stage
+ * threshold, that stage's share of demand is disconnected at once.
+ * Returns the end-of-step frequency, its extremes and the new shed stage.
  */
-function stepFrequency(frequencyHz, imbalanceMW, kineticMWs, groups, cfg) {
+function stepFrequency(frequencyHz, imbalanceMW, kineticMWs, groups, cfg, ufls) {
   const { nominalHz, swingGain, dampingPerMin, substeps, minKineticMWs } = cfg.frequency;
   const gain = (swingGain * nominalHz) / (2 * Math.max(kineticMWs, minKineticMWs));
   const perHz = groups.map((g) => g.ratingMW / (nominalHz * g.droop));
@@ -222,15 +226,25 @@ function stepFrequency(frequencyHz, imbalanceMW, kineticMWs, groups, cfg) {
   const dt = cfg.time.stepMinutes / n;
 
   let f = frequencyHz;
+  let minHz = f;
+  let maxHz = f;
   let governorMW = 0;
+  let imbalance = imbalanceMW;
+  let shedStage = ufls.stage;
   for (let i = 0; i < n; i++) {
+    while (shedStage < ufls.thresholdsHz.length && f < ufls.thresholdsHz[shedStage]) {
+      shedStage++;
+      imbalance += ufls.demandMW * (ufls.stagePct / 100);
+    }
     governorMW = 0;
     groups.forEach((g, k) => {
       governorMW += clamp(-(f - nominalHz) * perHz[k], -g.downMW, g.upMW);
     });
-    f += dt * (gain * (imbalanceMW + governorMW) - dampingPerMin * (f - nominalHz));
+    f += dt * (gain * (imbalance + governorMW) - dampingPerMin * (f - nominalHz));
+    minHz = Math.min(minHz, f);
+    maxHz = Math.max(maxHz, f);
   }
-  return { frequencyHz: f, governorMW };
+  return { frequencyHz: f, minHz, maxHz, governorMW, shedStage };
 }
 
 /** Which units respond automatically to frequency this step. */
@@ -375,7 +389,6 @@ export function createState(world, cfg = defaultConfig, seed = 1) {
     blackoutCause: null,
     governorMW: 0,
     shedStage: 0,
-    shedTimer: 0,
     restoreTimer: 0,
     stats: { ...EMPTY_STATS },
   };
@@ -463,21 +476,25 @@ export function step(state, world, cfg = defaultConfig) {
   s = derive({ ...s, units, demandMW, forecastMW: forecastLoad(world, minute, cfg), governorMW: 0 }, world, cfg);
 
   // Frequency.
-  const groups = responders(s.reserve, world.assist, cfg);
-  const { frequencyHz, governorMW } = stepFrequency(state.frequencyHz, s.imbalanceMW, s.inertia.kineticMWs, groups, cfg);
-  s = { ...s, frequencyHz, governorMW, imbalanceMW: s.imbalanceMW + governorMW };
-
-  // Under-frequency load shedding and restoration.
   const u = cfg.ufls;
-  let { shedStage, shedTimer, restoreTimer, eventLog } = s;
-  shedTimer = Math.max(0, shedTimer - stepMin);
-  let newStages = 0;
-  if (frequencyHz < cfg.bands.warningLowHz && shedStage < u.maxStages && shedTimer === 0) {
-    shedStage++;
-    newStages = 1;
-    shedTimer = u.stageDelayMin;
+  const groups = responders(s.reserve, world.assist, cfg);
+  const freq = stepFrequency(state.frequencyHz, s.imbalanceMW, s.inertia.kineticMWs, groups, cfg, {
+    demandMW: s.demandMW,
+    stage: s.shedStage,
+    thresholdsHz: u.thresholdsHz,
+    stagePct: u.stagePct,
+  });
+  let { frequencyHz } = freq;
+  const { governorMW } = freq;
+  s = { ...s, frequencyHz, governorMW };
+
+  // Under-frequency load shedding (already applied inside the step) and restoration.
+  let { shedStage, restoreTimer, eventLog } = s;
+  const newStages = freq.shedStage - shedStage;
+  if (newStages > 0) {
+    for (let k = shedStage + 1; k <= freq.shedStage; k++) eventLog = [...eventLog, { minute, type: 'shed', stage: k }];
+    shedStage = freq.shedStage;
     restoreTimer = 0;
-    eventLog = [...eventLog, { minute, type: 'shed', stage: shedStage }];
   } else if (
     shedStage > 0 &&
     frequencyHz >= u.restoreAboveHz &&
@@ -494,6 +511,9 @@ export function step(state, world, cfg = defaultConfig) {
     restoreTimer = 0;
   }
 
+  // A blackout happens if frequency left the safe range at any point in the step.
+  if (freq.minHz < cfg.bands.blackoutLowHz) frequencyHz = freq.minHz;
+  else if (freq.maxHz > cfg.bands.blackoutHighHz) frequencyHz = freq.maxHz;
   const band = frequencyBand(frequencyHz, cfg);
   let status = 'running';
   let blackoutCause = null;
@@ -531,7 +551,7 @@ export function step(state, world, cfg = defaultConfig) {
   }
 
   return derive(
-    { ...s, shedStage, shedTimer, restoreTimer, eventLog, band, status, blackoutCause, stats: st },
+    { ...s, frequencyHz, shedStage, restoreTimer, eventLog, band, status, blackoutCause, stats: st },
     world,
     cfg,
   );

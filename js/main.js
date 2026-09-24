@@ -77,8 +77,8 @@ async function main() {
     data,
     cfg: config,
     onBack: () => show('intro'),
-    onStart: ({ scenario, day, difficulty, assist }) => {
-      const world = buildWorld({ scenario, day, types: data.types, difficulty, assist, cfg: config });
+    onStart: ({ scenario, day, difficulty, assist, accidents, autoStorage, autoBackup }) => {
+      const world = buildWorld({ scenario, day, types: data.types, difficulty, assist, accidents, autoStorage, autoBackup, cfg: config });
       const label = [
         tOr(`day.${day.id}.name`, day.name),
         scenario.id === 'custom' ? t('fleet.custom.name') : tOr(`scenario.${scenario.id}.name`, scenario.name),

@@ -2,8 +2,10 @@
 // so the same code runs in the browser and in `node --test`.
 //
 // A `world` holds everything fixed for one game (built by scenarios.js):
-//   { types, units, peakLoadMW, profiles: { load, solar, wind }, events,
-//     assist, forecastErrorPct, randomTrip }
+//   { types, units, techs, peakLoadMW, profiles: { load, solar, wind },
+//     events, randomAccidents, assist, forecastErrorPct }
+// Each unit is one generating unit; units of one technology share a `tech`
+// index (see fleet.js for technology-level commands).
 // A `state` holds everything that changes minute to minute.
 //
 // Simplifications, for educators:
@@ -14,7 +16,10 @@
 // - The optional assist is a proportional governor on online dispatchable
 //   units. Its response is counted in the balance but not in unit outputs.
 // - Load shedding removes whole 5% blocks of demand, like real UFLS relays.
+// - Automatic storage, demand-response and peaker control (auto.js) reacts to
+//   the previous minute's imbalance and frequency.
 
+import { autoDispatch } from './auto.js';
 import { config as defaultConfig } from './config.js';
 import {
   canAdjust,
@@ -68,9 +73,20 @@ export function forecastLoad(world, minute, cfg = defaultConfig) {
   return world.peakLoadMW * profileAt(world.profiles.load, minute, cfg.time.dayMinutes);
 }
 
-/** Total renewable capacity of a kind ('solar' | 'wind') in the fleet. */
+const capacityCache = new WeakMap();
+
+/** Total renewable capacity of a kind ('solar' | 'wind') in the fleet (cached per unit list). */
 export function variableCapacity(world, kind) {
-  return world.units.reduce((sum, u) => sum + (world.types[u.type].variable === kind ? u.maxMW : 0), 0);
+  let byKind = capacityCache.get(world.units);
+  if (!byKind) {
+    byKind = {};
+    for (const u of world.units) {
+      const v = world.types[u.type].variable;
+      if (v) byKind[v] = (byKind[v] ?? 0) + u.maxMW;
+    }
+    capacityCache.set(world.units, byKind);
+  }
+  return byKind[kind] ?? 0;
 }
 
 /**
@@ -86,7 +102,7 @@ export function forecastVariable(world, kind, minute, cfg = defaultConfig, state
   return variableCapacity(world, kind) * cf * factor;
 }
 
-const EFFECT_KIND = { clouds: 'solar', windCutout: 'wind' };
+const EFFECT_KIND = { clouds: 'solar', windCutout: 'wind', windLull: 'wind', demandSurge: 'load' };
 
 function effectOf(event, cfg) {
   return {
@@ -107,7 +123,7 @@ function knownEffects(state, cfg) {
   return upcoming.length ? [...state.effects, ...upcoming] : state.effects;
 }
 
-/** Multiplier from active events (clouds, typhoon cut-out) that fade in and out. */
+/** Multiplier from active events (clouds, typhoon cut-out, demand surge) that fade in and out. */
 function effectFactor(effects, kind, minute) {
   let factor = 1;
   for (const e of effects) {
@@ -320,24 +336,41 @@ function initialDispatch(units, world, demandMW, cfg, state) {
   return out;
 }
 
-function buildEvents(world, cfg, rand) {
-  const events = world.events.map((e) => ({ ...e }));
-  if (world.randomTrip) {
-    const candidates = world.units
-      .map((spec, i) => ({ spec, i, type: world.types[spec.type] }))
-      .filter(({ spec, type }) => spec.initialState === 'online' && type.dispatchable && !type.storage &&
-        !type.activationLimited && !type.energyLimited && !type.mustRun);
-    if (candidates.length > 0) {
-      const pick = candidates[Math.floor(rand() * candidates.length)];
-      const [from, to] = cfg.events.randomTripWindowMin;
-      events.push({
-        timeMin: Math.round(from + rand() * (to - from)),
-        type: 'trip',
-        unit: pick.spec.name,
-        fraction: cfg.events.randomTripFraction,
-      });
+/** Draws the day's random accidents: when, and what kind. */
+export function randomAccidents(world, cfg, rand) {
+  const r = cfg.events.random;
+  const kinds = Object.entries(r.weights).filter(([kind]) => {
+    if (kind === 'clouds') return variableCapacity(world, 'solar') > 0;
+    if (kind === 'windLull') return variableCapacity(world, 'wind') > 0;
+    return true;
+  });
+  const totalWeight = kinds.reduce((sum, [, w]) => sum + w, 0);
+  const times = [];
+  const events = [];
+  for (let i = 0; i < r.count; i++) {
+    let time = null;
+    for (let attempt = 0; attempt < 30 && time === null; attempt++) {
+      const t = Math.round(r.windowMin[0] + rand() * (r.windowMin[1] - r.windowMin[0]));
+      if (times.every((other) => Math.abs(other - t) >= r.minGapMin)) time = t;
+    }
+    if (time === null) continue;
+    times.push(time);
+    let pick = rand() * totalWeight;
+    const [kind] = kinds.find(([, w]) => (pick -= w) < 0) ?? kinds[0];
+    const base = { timeMin: time, type: kind, random: true };
+    if (kind === 'trip') {
+      const [lo, hi] = r.tripUnits;
+      events.push({ ...base, unitType: 'random', units: lo + Math.floor(rand() * (hi - lo + 1)) });
+    } else {
+      events.push({ ...base, ...r[kind] });
     }
   }
+  return events;
+}
+
+function buildEvents(world, cfg, rand) {
+  const events = world.events.map((e) => ({ ...e }));
+  if (world.randomAccidents) events.push(...randomAccidents(world, cfg, rand));
   // Announced events (e.g. typhoon warnings) get a warning entry ahead of time.
   for (const e of [...events]) {
     if (e.warnMin) events.push({ timeMin: Math.max(1, e.timeMin - e.warnMin), type: 'warning', about: e.type, atMin: e.timeMin });
@@ -393,39 +426,65 @@ export function createState(world, cfg = defaultConfig, seed = 1) {
     stats: { ...EMPTY_STATS },
   };
   const demandMW = actualLoad(base, world, 0, cfg);
-  const created = world.units.map((spec) => createUnit(spec, world.types[spec.type]));
+  const created = world.units.map((spec, i) => ({ ...createUnit(spec, world.types[spec.type]), tech: spec.tech ?? i }));
   const units = initialDispatch(created, world, demandMW, cfg, base);
   return derive({ ...base, units, demandMW, forecastMW: forecastLoad(world, 0, cfg) }, world, cfg);
 }
 
-/** Forecast × noise × (Hard only) a slow forecast error. */
+/** Forecast × noise × (Hard only) a slow forecast error × demand surges. */
 function actualLoad(state, world, minute, cfg) {
   const error = (world.forecastErrorPct / 100) *
     Math.sin((4 * Math.PI * minute) / cfg.time.dayMinutes + state.forecastPhase);
-  return forecastLoad(world, minute, cfg) * (1 + state.loadNoise) * (1 + error);
+  const surge = effectFactor(state.effects, 'load', minute);
+  return forecastLoad(world, minute, cfg) * (1 + state.loadNoise) * (1 + error) * surge;
 }
 
 // ---- Events ------------------------------------------------------------------
+
+/** Types a random trip can hit: spinning thermal units. */
+function isTrippable(type) {
+  return type.dispatchable && !type.storage && !type.activationLimited && !type.energyLimited && type.inertiaH > 0;
+}
 
 function applyEvent(state, world, event, cfg) {
   const minute = state.minute;
   const log = { minute, type: event.type, note: event.note ?? null };
   switch (event.type) {
     case 'trip': {
-      const index = state.units.findIndex((u) => u.name === event.unit);
-      if (index < 0) return state;
-      const unit = state.units[index];
-      const before = unit.outputMW;
-      const tripped = tripUnit(unit, event.fraction ?? 1);
-      const units = state.units.map((u, i) => (i === index ? tripped : u));
-      return {
-        ...state,
-        units,
-        eventLog: [...state.eventLog, { ...log, unit: unit.name, lostMW: before - tripped.outputMW }],
-      };
+      // Trip online units of one technology: `units` of them, or until `lossMW` is lost.
+      let s = state;
+      let unitType = event.unitType;
+      if (!unitType || unitType === 'random') {
+        const online = [...new Set(state.units
+          .filter((u) => u.status === 'online' && isTrippable(world.types[u.type]))
+          .map((u) => u.type))];
+        if (online.length === 0) return state;
+        const [r, seed] = nextRandom(state.seed);
+        unitType = online[Math.floor(r * online.length)];
+        s = { ...s, seed };
+      }
+      const candidates = s.units
+        .map((u, i) => i)
+        .filter((i) => s.units[i].type === unitType && s.units[i].status === 'online')
+        .sort((a, b) => s.units[b].outputMW - s.units[a].outputMW);
+      const maxUnits = event.units ?? (event.lossMW ? Infinity : 1);
+      const units = s.units.slice();
+      let lostMW = 0;
+      let count = 0;
+      for (const i of candidates) {
+        if (count >= maxUnits || (event.lossMW && lostMW >= event.lossMW)) break;
+        lostMW += units[i].outputMW;
+        units[i] = tripUnit(units[i]);
+        count++;
+      }
+      if (count === 0) return s;
+      const tech = units[candidates[0]].tech;
+      return { ...s, units, eventLog: [...s.eventLog, { ...log, unitType, tech, units: count, lostMW }] };
     }
     case 'clouds':
-    case 'windCutout': {
+    case 'windCutout':
+    case 'windLull':
+    case 'demandSurge': {
       const effect = { ...effectOf(event, cfg), start: minute, until: minute + (event.durationMin ?? 60) };
       return { ...state, effects: [...state.effects, effect], eventLog: [...state.eventLog, log] };
     }
@@ -464,6 +523,17 @@ export function step(state, world, cfg = defaultConfig) {
     nextEvent++;
   }
   s.nextEvent = nextEvent;
+
+  // Automatic storage, demand response and peaker backup, based on the last minute.
+  if (s.units.some((u) => u.auto)) {
+    let autoOutMW = 0;
+    for (const u of s.units) if (u.auto) autoOutMW += u.outputMW;
+    const rawImbalance = state.imbalanceMW - state.governorMW;
+    const trend = forecastLoad(world, minute, cfg) - forecastLoad(world, state.minute, cfg);
+    const needMW = autoOutMW - rawImbalance + trend +
+      (cfg.frequency.nominalHz - state.frequencyHz) * cfg.auto.freqGainPerHz * state.servedLoadMW;
+    s = { ...s, units: autoDispatch(s.units, world.types, needMW, cfg) };
+  }
 
   // Units.
   const units = s.units.map((unit) => {
@@ -548,6 +618,10 @@ export function step(state, world, cfg = defaultConfig) {
       st.costNTD += unit.outputMW * type.costPerMWh * hours;
       st.co2Tonnes += unit.outputMW * type.co2PerMWh * hours;
     }
+    // Keeping a unit warm (or warming it up) burns some fuel.
+    if (unit.status === 'standby' || unit.status === 'warming') {
+      st.costNTD += unit.maxMW * (type.standbyCostPerMWh ?? 0) * hours;
+    }
   }
 
   return derive(
@@ -558,6 +632,11 @@ export function step(state, world, cfg = defaultConfig) {
 }
 
 // ---- Player commands -----------------------------------------------------------
+
+/** Recomputes derived quantities after units were changed outside step(). */
+export function refresh(state, world, cfg = defaultConfig) {
+  return derive(state, world, cfg);
+}
 
 function updateAt(state, world, index, cfg, fn) {
   const units = state.units.map((unit, i) => (i === index ? fn(unit, world.types[unit.type]) : unit));

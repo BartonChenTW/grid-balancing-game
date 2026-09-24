@@ -73,35 +73,49 @@ export const config = {
   // Effects of events such as typhoon cut-out or clouds fade in and out.
   events: {
     defaultRampMin: 20,
-    randomTripFraction: 0.5, // Hard: part of a large block trips at a random time
-    randomTripWindowMin: [600, 1200],
+    // Random accidents: how many per day, when, and what they do.
+    random: {
+      count: 3,
+      windowMin: [300, 1320],
+      minGapMin: 120,
+      weights: { trip: 4, clouds: 2, windLull: 2, demandSurge: 2 },
+      tripUnits: [1, 3], // how many units of one technology trip together
+      clouds: { factor: 0.4, durationMin: 60 },
+      windLull: { factor: 0.35, durationMin: 90, rampMin: 30 },
+      demandSurge: { factor: 1.05, durationMin: 120, rampMin: 30 },
+    },
+  },
+
+  // Automatic control of storage, demand response and gas-peaker backup.
+  auto: {
+    freqGainPerHz: 0.05, // extra response per Hz of deviation, as a share of demand
+    startThresholdPct: 5, // start an offline storage unit when the need exceeds this % of its size
   },
 
   difficulties: {
-    easy: { assist: true, forecastErrorPct: 0, events: false, randomTrip: false },
-    normal: { assist: false, forecastErrorPct: 0, events: true, randomTrip: false },
-    hard: { assist: false, forecastErrorPct: 3, events: true, randomTrip: true },
+    easy: { assist: true, forecastErrorPct: 0, accidents: 'none', autoStorage: true, autoBackup: true },
+    normal: { assist: false, forecastErrorPct: 0, accidents: 'scheduled', autoStorage: false, autoBackup: false },
+    hard: { assist: false, forecastErrorPct: 3, accidents: 'both', autoStorage: false, autoBackup: false },
   },
 
-  // Custom mix: slider limits (GW), how big blocks are, and storage hours.
+  // Custom mix: slider limits (GW) and storage hours. Unit sizes come from unit-types.json.
   custom: {
     peakRangeGW: [25, 90],
     defaultScenario: 'taiwan-2025',
     reserveMarginPct: 5, // auto-commitment brings this much spare capacity online at midnight
     techs: [
-      { type: 'nuclear', maxGW: 12, blockMW: 3000 },
-      { type: 'coal', maxGW: 30, blockMW: 7000 },
-      { type: 'gasCcgt', maxGW: 50, blockMW: 8000 },
-      { type: 'gasOcgt', maxGW: 15, blockMW: 15000 },
-      { type: 'oil', maxGW: 5, blockMW: 5000 },
-      { type: 'hydro', maxGW: 3, blockMW: 3000, hours: 7 },
-      { type: 'pumpedHydro', maxGW: 10, blockMW: 10000, hours: 6 },
-      { type: 'battery', maxGW: 40, blockMW: 40000, hours: 4 },
-      { type: 'dsm', maxGW: 8, blockMW: 8000 },
-      { type: 'solar', maxGW: 100, blockMW: 100000 },
-      { type: 'wind', maxGW: 60, blockMW: 60000 },
+      { type: 'nuclear', maxGW: 12 },
+      { type: 'coal', maxGW: 30 },
+      { type: 'gasCcgt', maxGW: 50 },
+      { type: 'gasOcgt', maxGW: 15 },
+      { type: 'oil', maxGW: 5 },
+      { type: 'hydro', maxGW: 3, hours: 7 },
+      { type: 'pumpedHydro', maxGW: 10, hours: 6 },
+      { type: 'battery', maxGW: 40, hours: 4 },
+      { type: 'dsm', maxGW: 8 },
+      { type: 'solar', maxGW: 100 },
+      { type: 'wind', maxGW: 60 },
     ],
-    maxBlocksPerTech: 4,
   },
 
   score: {

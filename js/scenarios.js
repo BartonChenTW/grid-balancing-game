@@ -1,6 +1,9 @@
 // Loads and validates game data (unit types, scenarios, day types) and turns
-// a chosen scenario + day + difficulty into a `world` for sim.js.
+// a chosen scenario + day + options into a `world` for sim.js.
 // Validation is pure so it can be tested in Node; only loadGameData fetches.
+//
+// A scenario lists one entry per technology: its total capacity and how many
+// identical units it has. buildWorld expands that into individual units.
 
 import { config as defaultConfig } from './config.js';
 import { forecastLoad, profileAt } from './sim.js';
@@ -14,8 +17,9 @@ export class DataError extends Error {
   }
 }
 
-const UNIT_STATES = ['online', 'offline'];
-const EVENT_TYPES = ['trip', 'clouds', 'windCutout'];
+const UNIT_STATES = ['online', 'standby', 'offline'];
+export const EVENT_TYPES = ['trip', 'clouds', 'windCutout', 'windLull', 'demandSurge'];
+export const ACCIDENT_MODES = ['none', 'scheduled', 'random', 'both'];
 const TYPE_NUMBERS = ['startupMin', 'shutdownMin', 'rampPctPerMin', 'minStablePct', 'inertiaH', 'costPerMWh', 'co2PerMWh'];
 
 const isNum = (x) => typeof x === 'number' && Number.isFinite(x);
@@ -32,7 +36,7 @@ function checkProfile(problems, where, profile, max) {
   });
 }
 
-function checkEvents(problems, where, events, unitNames) {
+function checkEvents(problems, where, events, techTypes) {
   if (events === undefined) return;
   if (!Array.isArray(events)) {
     problems.push(`${where} must be an array`);
@@ -44,10 +48,12 @@ function checkEvents(problems, where, events, unitNames) {
     if (!isNum(e.timeMin) || e.timeMin < 0 || e.timeMin >= 1440) problems.push(`${at}.timeMin must be a minute of the day (0–1439)`);
     if (!EVENT_TYPES.includes(e.type)) problems.push(`${at}.type must be one of ${EVENT_TYPES.join(', ')}`);
     if (e.type === 'trip') {
-      if (unitNames && !unitNames.includes(e.unit)) problems.push(`${at}.unit "${e.unit}" is not a unit in this scenario`);
-      if (e.fraction !== undefined && (!isNum(e.fraction) || e.fraction <= 0 || e.fraction > 1)) problems.push(`${at}.fraction must be in (0, 1]`);
+      if (techTypes && !techTypes.includes(e.unitType)) problems.push(`${at}.unitType "${e.unitType}" is not a technology in this scenario`);
+      if (e.units !== undefined && (!Number.isInteger(e.units) || e.units < 1)) problems.push(`${at}.units must be a whole number ≥ 1`);
+      if (e.lossMW !== undefined && (!isNum(e.lossMW) || e.lossMW <= 0)) problems.push(`${at}.lossMW must be a positive number`);
     }
-    if (e.factor !== undefined && (!isNum(e.factor) || e.factor < 0 || e.factor > 1)) problems.push(`${at}.factor must be between 0 and 1`);
+    const maxFactor = e.type === 'demandSurge' ? 2 : 1;
+    if (e.factor !== undefined && (!isNum(e.factor) || e.factor < 0 || e.factor > maxFactor)) problems.push(`${at}.factor must be between 0 and ${maxFactor}`);
     if (e.durationMin !== undefined && (!isNum(e.durationMin) || e.durationMin <= 0)) problems.push(`${at}.durationMin must be a positive number`);
   });
 }
@@ -65,10 +71,16 @@ export function validateUnitTypes(types) {
       if (!isNum(t[key]) || t[key] < 0) problems.push(`${id}.${key} must be a number ≥ 0`);
     }
     if (isNum(t.minStablePct) && t.minStablePct > 100) problems.push(`${id}.minStablePct must be ≤ 100`);
+    if (t.syncMin !== undefined && (!isNum(t.syncMin) || t.syncMin <= 0)) problems.push(`${id}.syncMin must be a positive number`);
     if (t.storage && (!isNum(t.efficiency) || t.efficiency <= 0 || t.efficiency > 1)) problems.push(`${id}.efficiency must be in (0, 1] for storage`);
     if (t.variable !== undefined && !['solar', 'wind'].includes(t.variable)) problems.push(`${id}.variable must be "solar" or "wind"`);
   }
   return problems;
+}
+
+/** Types whose fleet is modelled as one unit (no unit count). */
+export function singleUnitType(type) {
+  return Boolean(type.storage || type.energyLimited || type.activationLimited || type.variable);
 }
 
 export function validateScenario(s, types) {
@@ -80,21 +92,23 @@ export function validateScenario(s, types) {
     problems.push('"units" must be a non-empty array');
     return problems;
   }
-  const names = new Set();
+  const seen = new Set();
   s.units.forEach((u, i) => {
     const at = `units[${i}]`;
     if (!isObj(u)) return problems.push(`${at} must be an object`);
     const type = types[u.type];
     if (!type || u.type.startsWith('_')) problems.push(`${at}.type "${u.type}" is not a known unit type (${Object.keys(types).filter((k) => !k.startsWith('_')).join(', ')})`);
-    if (typeof u.name !== 'string' || !u.name) problems.push(`${at}.name must be a non-empty string`);
-    else if (names.has(u.name)) problems.push(`${at}.name "${u.name}" is used twice`);
-    names.add(u.name);
-    if (!isNum(u.maxMW) || u.maxMW <= 0) problems.push(`${at}.maxMW must be a positive number`);
-    if (u.initialState !== undefined && !UNIT_STATES.includes(u.initialState)) problems.push(`${at}.initialState must be "online" or "offline"`);
+    else if (seen.has(u.type)) problems.push(`${at}.type "${u.type}" appears twice; list each technology once and use "count" for its units`);
+    seen.add(u.type);
+    if (u.name !== undefined && (typeof u.name !== 'string' || !u.name)) problems.push(`${at}.name must be a non-empty string`);
+    if (!isNum(u.maxMW) || u.maxMW <= 0) problems.push(`${at}.maxMW must be a positive number (total capacity of the technology)`);
+    if (u.count !== undefined && (!Number.isInteger(u.count) || u.count < 1)) problems.push(`${at}.count must be a whole number ≥ 1`);
+    if (type && singleUnitType(type) && (u.count ?? 1) !== 1) problems.push(`${at}.count must be 1 for ${u.type}`);
+    if (u.initialState !== undefined && !UNIT_STATES.includes(u.initialState)) problems.push(`${at}.initialState must be one of ${UNIT_STATES.join(', ')}`);
     if (u.initialPct !== undefined && (!isNum(u.initialPct) || u.initialPct < 0 || u.initialPct > 100)) problems.push(`${at}.initialPct must be between 0 and 100`);
     if (type && (type.storage || type.energyLimited) && (!isNum(u.energyMWh) || u.energyMWh <= 0)) problems.push(`${at}.energyMWh must be a positive number for ${u.type}`);
   });
-  checkEvents(problems, 'events', s.events, [...names]);
+  checkEvents(problems, 'events', s.events, [...seen]);
   return problems;
 }
 
@@ -162,27 +176,20 @@ export function capacityByType(scenario) {
   return gw;
 }
 
-/**
- * Builds a scenario from capacities in GW per type. Large technologies are
- * split into blocks so there is something to start and stop.
- * label(type) gives the display name of a type (block letters are appended).
- */
-export function customScenario(capacitiesGW, peakLoadGW, label = (type) => type, cfg = defaultConfig) {
+/** Builds a scenario from capacities in GW per type, with typical unit sizes. */
+export function customScenario(capacitiesGW, peakLoadGW, types, cfg = defaultConfig) {
   const units = [];
   for (const tech of cfg.custom.techs) {
+    const type = types[tech.type];
     const totalMW = Math.round((capacitiesGW[tech.type] ?? 0) * 1000);
-    if (totalMW <= 0) continue;
-    const blocks = Math.min(cfg.custom.maxBlocksPerTech, Math.ceil(totalMW / tech.blockMW));
-    for (let b = 0; b < blocks; b++) {
-      const maxMW = Math.round(totalMW / blocks);
-      const name = blocks > 1 ? `${label(tech.type)} ${'ABCDEFGH'[b]}` : label(tech.type);
-      const unit = { type: tech.type, name, maxMW };
-      if (tech.hours) unit.energyMWh = maxMW * tech.hours;
-      if (tech.type === 'nuclear') Object.assign(unit, { initialState: 'online', initialPct: 100 });
-      if (tech.type === 'hydro') Object.assign(unit, { initialState: 'online', initialPct: 10 });
-      if (tech.type === 'pumpedHydro' || tech.type === 'battery') unit.initialSocPct = 50;
-      units.push(unit);
-    }
+    if (!type || totalMW <= 0) continue;
+    const count = singleUnitType(type) ? 1 : Math.max(1, Math.round(totalMW / type.unitMW));
+    const unit = { type: tech.type, maxMW: totalMW, count };
+    if (tech.hours) unit.energyMWh = totalMW * tech.hours;
+    if (tech.type === 'nuclear') Object.assign(unit, { initialState: 'online', initialPct: 100 });
+    if (tech.type === 'hydro') Object.assign(unit, { initialState: 'online', initialPct: 10 });
+    if (type.storage) unit.initialSocPct = 50;
+    units.push(unit);
   }
   return {
     id: 'custom',
@@ -196,6 +203,33 @@ export function customScenario(capacitiesGW, peakLoadGW, label = (type) => type,
 }
 
 // ---- World -------------------------------------------------------------------------
+
+/**
+ * Expands technology entries into individual units. Returns the unit specs
+ * and one `tech` record per technology (for the one-card-per-technology UI).
+ */
+export function expandUnits(scenario, types, options = {}) {
+  const units = [];
+  const techs = [];
+  scenario.units.forEach((entry, techIndex) => {
+    const type = types[entry.type];
+    const count = entry.count ?? 1;
+    const name = entry.name ?? entry.type;
+    const auto = (type.storage || type.activationLimited) ? Boolean(options.autoStorage) : type.autoCapable ? Boolean(options.autoBackup) : false;
+    const first = units.length;
+    for (let k = 0; k < count; k++) {
+      units.push({
+        ...entry,
+        name: count > 1 ? `${name} ${k + 1}` : name,
+        tech: techIndex,
+        maxMW: entry.maxMW / count,
+        auto,
+      });
+    }
+    techs.push({ type: entry.type, name, count, maxMW: entry.maxMW, first, last: units.length - 1 });
+  });
+  return { units, techs };
+}
 
 /**
  * Chooses which thermal units are running at midnight: cheapest first until
@@ -231,29 +265,54 @@ export function autoCommit(world, cfg = defaultConfig) {
   }
   const minOf = (i) => (units[i].maxMW * types[units[i].type].minStablePct) / 100;
   while (online.length > 1 && online.reduce((sum, i) => sum + minOf(i), 0) > net) online.pop();
-  for (const i of flexible) units[i].initialState = online.includes(i) ? 'online' : 'offline';
+  const onlineSet = new Set(online);
+  for (const i of flexible) {
+    // Automatic backup peakers wait warm on standby so they can respond within minutes.
+    const spare = units[i].auto && hasStandbyType(types[units[i].type]) ? 'standby' : 'offline';
+    units[i].initialState = onlineSet.has(i) ? 'online' : spare;
+  }
   return { ...world, units };
 }
 
-/** Combines a scenario (fleet), a day type and a difficulty into a world for sim.js. */
-export function buildWorld({ scenario, day, types, difficulty = 'normal', assist, cfg = defaultConfig }) {
+/**
+ * Combines a scenario (fleet), a day type and options into a world for sim.js.
+ * options: difficulty ('easy' | 'normal' | 'hard') sets defaults; assist,
+ * accidents ('none' | 'scheduled' | 'random' | 'both'), autoStorage and
+ * autoBackup override them.
+ */
+export function buildWorld({ scenario, day, types, difficulty = 'normal', assist, accidents, autoStorage, autoBackup, cfg = defaultConfig }) {
   const diff = cfg.difficulties[difficulty] ?? cfg.difficulties.normal;
-  const events = diff.events ? [...(day.events ?? []), ...(scenario.events ?? [])] : [];
+  const mode = accidents ?? diff.accidents;
+  const scheduled = mode === 'scheduled' || mode === 'both';
+  const options = {
+    autoStorage: autoStorage ?? diff.autoStorage,
+    autoBackup: autoBackup ?? diff.autoBackup,
+  };
+  const { units, techs } = expandUnits(scenario, types, options);
   const world = {
     scenarioId: scenario.id,
     dayId: day.id,
     difficulty,
     types,
-    units: scenario.units,
+    units,
+    techs,
+    techNames: techs.map((t) => t.name),
     annualPeakMW: scenario.peakLoadMW,
     peakLoadMW: scenario.peakLoadMW * day.peakRatio,
     profiles: { load: normalise(day.load), solar: day.solar, wind: day.wind },
-    events,
+    events: scheduled ? [...(day.events ?? []), ...(scenario.events ?? [])] : [],
+    accidents: mode,
+    randomAccidents: mode === 'random' || mode === 'both',
     assist: assist ?? diff.assist,
+    autoStorage: options.autoStorage,
+    autoBackup: options.autoBackup,
     forecastErrorPct: diff.forecastErrorPct,
-    randomTrip: diff.randomTrip,
   };
   return autoCommit(world, cfg);
+}
+
+function hasStandbyType(type) {
+  return (type.syncMin ?? 0) > 0;
 }
 
 function normalise(profile) {

@@ -5,29 +5,25 @@
   "year": 2025,
   "peakLoadMW": 40752,
   "dataStatus": "partial",
-  "dataNotes": "Annual peak load and installed capacity by source are official 2025 figures; battery size uses the 2025 grid-storage target. Grouping into blocks, storage energy, DSM size and all unit parameters are illustrative. Biomass, waste and geothermal (0.8 GW) are left out.",
+  "dataNotes": "Annual peak load and installed capacity by source are official 2025 figures; battery size uses the 2025 grid-storage target. Unit counts and sizes, storage energy, DSM size and all unit parameters are illustrative. Biomass, waste and geothermal (0.8 GW) are left out.",
   "sources": [
     { "what": "Peak load 2025", "url": "https://data.gov.tw/dataset/8307" },
     { "what": "Installed capacity by source 2025", "url": "https://data.gov.tw/dataset/16480" },
     { "what": "Grid storage target", "url": "https://data.gov.tw/dataset/16437" }
   ],
   "units": [
-    { "type": "coal", "name": "Coal A", "maxMW": 6500 },
-    { "type": "coal", "name": "Coal B", "maxMW": 6500 },
-    { "type": "coal", "name": "Coal C", "maxMW": 6309 },
-    { "type": "gasCcgt", "name": "Gas CCGT A", "maxMW": 7500 },
-    { "type": "gasCcgt", "name": "Gas CCGT B", "maxMW": 7500 },
-    { "type": "gasCcgt", "name": "Gas CCGT C", "maxMW": 5847 },
-    { "type": "gasOcgt", "name": "Gas peakers", "maxMW": 2000 },
-    { "type": "oil", "name": "Oil units", "maxMW": 2229 },
-    { "type": "hydro", "name": "Hydro", "maxMW": 2124, "energyMWh": 15000, "initialState": "online", "initialPct": 10 },
-    { "type": "pumpedHydro", "name": "Pumped hydro", "maxMW": 2602, "energyMWh": 15600, "initialSocPct": 60 },
-    { "type": "battery", "name": "Battery", "maxMW": 1000, "energyMWh": 2000, "initialSocPct": 50 },
-    { "type": "dsm", "name": "Demand response", "maxMW": 1500, "maxActivationMin": 240 },
-    { "type": "solar", "name": "Solar", "maxMW": 15474 },
-    { "type": "wind", "name": "Wind", "maxMW": 4517 }
+    { "type": "coal", "maxMW": 19309, "count": 27 },
+    { "type": "gasCcgt", "maxMW": 20847, "count": 35 },
+    { "type": "gasOcgt", "maxMW": 2000, "count": 10 },
+    { "type": "oil", "maxMW": 2229, "count": 4 },
+    { "type": "hydro", "maxMW": 2124, "energyMWh": 15000, "initialState": "online", "initialPct": 10 },
+    { "type": "pumpedHydro", "maxMW": 2602, "energyMWh": 15600, "initialSocPct": 60 },
+    { "type": "battery", "maxMW": 1000, "energyMWh": 2000, "initialSocPct": 50 },
+    { "type": "dsm", "maxMW": 1500, "maxActivationMin": 240 },
+    { "type": "solar", "maxMW": 15474 },
+    { "type": "wind", "maxMW": 4517 }
   ],
   "events": [
-    { "timeMin": 547, "type": "trip", "unit": "Gas CCGT A", "fraction": 0.4, "note": "hsinta2022" }
+    { "timeMin": 547, "type": "trip", "unitType": "coal", "lossMW": 2600, "note": "hsinta2022" }
   ]
 }

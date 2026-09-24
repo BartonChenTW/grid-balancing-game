@@ -60,13 +60,17 @@ export function autopilot(state, world, cfg) {
     const type = types[u.type];
     return isThermal(type) && (u.status === 'online' || u.status === 'starting') ? sum + u.maxMW : sum;
   }, 0);
+  // Cheapest first; within a technology, warm standby units before cold ones.
   const candidates = s.units
     .map((u, i) => ({ u, i, type: types[u.type] }))
-    .filter(({ u, type }) => isThermal(type) && canStart(u, type) && u.status === 'offline')
-    .sort((a, b) => a.type.costPerMWh - b.type.costPerMWh);
+    .filter(({ u, type }) => isThermal(type) && canStart(u, type) && (u.status === 'offline' || u.status === 'standby'))
+    .sort((a, b) => a.type.costPerMWh - b.type.costPerMWh || (a.u.status === 'standby' ? -1 : 0) - (b.u.status === 'standby' ? -1 : 0));
   let planned = thermalCap;
+  const needByLead = new Map();
   for (const c of candidates) {
-    const need = maxNet(world, t, Math.min(t + c.type.startupMin + 60, 1439), cfg, s) * 1.08;
+    const lead = c.u.status === 'standby' ? c.type.syncMin : c.type.startupMin + (c.type.syncMin ?? 0);
+    if (!needByLead.has(lead)) needByLead.set(lead, maxNet(world, t, Math.min(t + lead + 60, 1439), cfg, s) * 1.08);
+    const need = needByLead.get(lead);
     if (need > planned + flexPower) {
       s = startCommand(s, world, c.i, cfg);
       planned += c.u.maxMW;
@@ -85,7 +89,7 @@ export function autopilot(state, world, cfg) {
     }, 0);
     const lowAhead = minNet(world, t, Math.min(t + 90, 1439), cfg, s);
     const worst = onlineThermal[0];
-    const highAhead = maxNet(world, t, Math.min(t + worst.type.startupMin + 120, 1439), cfg, s) * 1.08;
+    const highAhead = maxNet(world, t, Math.min(t + (worst.type.syncMin ?? worst.type.startupMin) + 120, 1439), cfg, s) * 1.08;
     if (mins > lowAhead + 0.3 * flexPower && thermalCap - worst.u.maxMW + flexPower > highAhead) {
       s = stopCommand(s, world, worst.i, cfg);
     }

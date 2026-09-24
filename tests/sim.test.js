@@ -144,15 +144,34 @@ test('profiles interpolate linearly and wrap at midnight', () => {
   assert.equal(profileAt([0, 1], 1080, 1440), 0.5);
 });
 
-test('a trip event removes capacity and is logged', () => {
-  const world = makeWorld([coal(1000, { name: 'Coal A' }), gas(1000)], {
-    loadMW: 1200,
-    events: [{ timeMin: 5, type: 'trip', unit: 'Coal A', fraction: 0.5 }],
-  });
+test('a trip event disconnects units of one technology and is logged', () => {
+  const world = makeWorld(
+    [coal(400, { name: 'C1', tech: 0 }), coal(400, { name: 'C2', tech: 0 }), coal(400, { name: 'C3', tech: 0 }), gas(1000)],
+    { loadMW: 1500, events: [{ timeMin: 5, type: 'trip', unitType: 'coal', lossMW: 500 }] },
+  );
   const state = run(createState(world, sandbox), world, 5, sandbox);
-  assert.equal(state.units[0].maxMW, 500);
+  const offline = state.units.filter((u) => u.type === 'coal' && u.status === 'offline');
+  assert.equal(offline.length, 2); // 2 units needed to lose ≥ 500 MW
   assert.equal(state.eventLog[0].type, 'trip');
-  assert.ok(state.eventLog[0].lostMW > 0);
+  assert.equal(state.eventLog[0].units, 2);
+  assert.ok(state.eventLog[0].lostMW >= 500);
+});
+
+test('a demand surge raises demand while it lasts', () => {
+  const world = makeWorld([coal(2000)], {
+    loadMW: 1000,
+    events: [{ timeMin: 10, type: 'demandSurge', factor: 1.1, durationMin: 60, rampMin: 1 }],
+  });
+  let state = run(createState(world, sandbox), world, 20, sandbox);
+  near(state.demandMW, 1100, 1e-6);
+  state = run(state, world, 60, sandbox);
+  near(state.demandMW, 1000, 1e-6);
+});
+
+test('keeping units on standby costs money', () => {
+  const world = makeWorld([coal(1000), { type: 'coal', name: 'Spare', maxMW: 700, initialState: 'standby' }], { loadMW: 600 });
+  const state = run(createState(world, quiet), world, 60);
+  near(state.stats.costNTD, 600 * 1800 + 700 * 150, 1e-3);
 });
 
 test('clouds reduce solar output while they pass', () => {

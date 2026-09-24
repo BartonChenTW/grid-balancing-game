@@ -2,9 +2,10 @@
 // side panel, unit cards, event log and end-of-day dialog.
 import { createChart } from './chart.js';
 import { computeScore, pickLesson } from './score.js';
-import { createState, setSetpoint, startCommand, step, stopCommand } from './sim.js';
+import { canTechAction, techAction, techSummary } from './fleet.js';
+import { createState, step } from './sim.js';
 import { formatClock, formatDuration, formatEnergy, formatNumber, t, unitName } from './strings.js';
-import { canAdjust, canStart, canStop, setpointRange } from './units.js';
+import { hasStandby } from './units.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -102,7 +103,7 @@ export function createPlay({ cfg, onQuit, operator = null }) {
     setSpeed(speedIndex === pauseIndex ? resumeIndex : pauseIndex);
   }
 
-  // ---- Unit cards --------------------------------------------------------------
+  // ---- Technology cards --------------------------------------------------------
 
   function holdButton(button, action) {
     let timer = null;
@@ -127,66 +128,107 @@ export function createPlay({ cfg, onQuit, operator = null }) {
     });
   }
 
+  function techLabel(tech) {
+    const info = world.techs[tech];
+    return info.name !== info.type ? unitName(info.name, info.type) : t(`unitType.${info.type}`);
+  }
+
+  function smallButton(text, label, action, hold = false) {
+    const b = el('button', 'adj', text);
+    b.type = 'button';
+    b.setAttribute('aria-label', label);
+    if (hold) holdButton(b, action);
+    else b.addEventListener('click', action);
+    return b;
+  }
+
+  function countControl(kindKey, name, downAction, upAction, tech) {
+    const box = el('div', 'count');
+    const label = el('span', 'count-label', t(kindKey));
+    const value = el('strong', 'count-value', '0');
+    const minus = smallButton('−', t(`${downAction === 'onlineDown' ? 'unit.onlineMinus' : 'unit.standbyMinus'}`, { name }), () => act(tech, downAction), true);
+    const plus = smallButton('+', t(`${upAction === 'onlineUp' ? 'unit.onlinePlus' : 'unit.standbyPlus'}`, { name }), () => act(tech, upAction), true);
+    box.append(label, value, minus, plus);
+    return { box, value, minus, plus };
+  }
+
   function buildCards() {
     const list = $('units');
     list.replaceChildren();
-    cards = state.units.map((unit, i) => {
-      const type = world.types[unit.type];
-      const group = groupOf[unit.type] ?? 'other';
+    cards = world.techs.map((info, tech) => {
+      const type = world.types[info.type];
+      const group = groupOf[info.type] ?? 'other';
+      const name = techLabel(tech);
+      const multi = info.count > 1;
       const li = el('li', 'unit');
       li.setAttribute('role', 'group');
-      const label = unitName(unit.name, unit.type);
-      li.setAttribute('aria-label', label);
+      li.setAttribute('aria-label', name);
       li.style.setProperty('--key', `var(--series-${group})`);
 
       const head = el('div', 'unit-head');
-      const sw = el('span', 'swatch');
-      const name = el('span', 'unit-name', label);
-      head.append(sw, name);
-      if (i < 10) head.append(el('span', 'unit-key', `[${(i + 1) % 10}]`));
+      head.append(el('span', 'swatch'), el('span', 'unit-name', name));
+      if (tech < 10) head.append(el('span', 'unit-key', `[${(tech + 1) % 10}]`));
       const status = el('span', 'status');
       head.append(status);
 
-      const typeLine = el('div', 'unit-type', t(`unitType.${unit.type}`));
+      const sub = multi
+        ? t('unit.fleet', { count: info.count, size: formatNumber(info.maxMW / info.count) })
+        : t(`unitType.${info.type}`);
+      const typeLine = el('div', 'unit-type', sub);
       const output = el('div', 'unit-output');
       const outNow = el('strong');
       const outInfo = el('span');
       output.append(outNow, outInfo);
 
       const bar = el('div', 'bar');
+      const onlineBand = el('div', 'bar-online');
       const fill = el('div', 'bar-fill');
       const target = el('div', 'bar-target');
-      bar.append(fill);
-      if (!type.storage && !type.variable && type.minStablePct > 0) {
-        const min = el('div', 'bar-min');
-        min.style.left = `${type.minStablePct}%`;
-        bar.append(min);
-      }
-      bar.append(target);
+      bar.append(onlineBand, fill, target);
 
       const detail = el('div', 'unit-detail');
+      const nodes = [head, typeLine, output, bar, detail];
+
+      // Unit counts: online / standby (multi-unit thermal fleets).
+      let online = null;
+      let standby = null;
+      if (multi) {
+        const counts = el('div', 'counts');
+        online = countControl('unit.status.online', name, 'onlineDown', 'onlineUp', tech);
+        counts.append(online.box);
+        if (hasStandby(type)) {
+          standby = countControl('unit.status.standby', name, 'standbyDown', 'standbyUp', tech);
+          counts.append(standby.box);
+        }
+        nodes.push(counts);
+      }
+
+      // Output −/+, Start/Stop for single units, Auto switch.
       const buttons = el('div', 'unit-buttons');
-      const minus = el('button', 'adj', '−');
-      const plus = el('button', 'adj', '+');
-      minus.type = plus.type = 'button';
-      minus.setAttribute('aria-label', t('unit.decrease', { name: label }));
-      plus.setAttribute('aria-label', t('unit.increase', { name: label }));
-      holdButton(minus, () => nudge(i, -1));
-      holdButton(plus, () => nudge(i, 1));
+      const minus = smallButton('−', t('unit.decrease', { name }), () => act(tech, 'down'), true);
+      const plus = smallButton('+', t('unit.increase', { name }), () => act(tech, 'up'), true);
       buttons.append(minus, plus);
       let power = null;
-      if (!type.alwaysOnline) {
+      if (!multi && !type.alwaysOnline) {
         power = el('button', 'power');
         power.type = 'button';
-        power.addEventListener('click', () => togglePower(i));
+        power.addEventListener('click', () => togglePower(tech));
         buttons.append(power);
-      } else {
-        buttons.style.gridTemplateColumns = '1fr 1fr';
       }
-      li.addEventListener('pointerdown', () => select(i));
-      li.append(head, typeLine, output, bar, detail, buttons);
+      let auto = null;
+      if (type.autoCapable) {
+        auto = el('button', 'power auto-btn', t('unit.auto'));
+        auto.type = 'button';
+        auto.addEventListener('click', () => act(tech, 'toggleAuto'));
+        buttons.append(auto);
+      }
+      buttons.style.gridTemplateColumns = `1fr 1fr${power ? ' 1.3fr' : ''}${auto ? ' 1.3fr' : ''}`;
+      nodes.push(buttons);
+
+      li.addEventListener('pointerdown', () => select(tech));
+      li.append(...nodes);
       list.append(li);
-      return { li, status, outNow, outInfo, fill, target, detail, minus, plus, power };
+      return { li, status, outNow, outInfo, onlineBand, fill, target, detail, online, standby, minus, plus, power, auto, name };
     });
     select(Math.min(selected, cards.length - 1));
   }
@@ -196,57 +238,86 @@ export function createPlay({ cfg, onQuit, operator = null }) {
     cards.forEach((c, k) => c.li.classList.toggle('selected', k === i));
   }
 
-  function nudge(i, dir) {
-    const unit = state.units[i];
-    const type = world.types[unit.type];
-    if (!canAdjust(unit) || state.status !== 'running') return;
-    const stepMW = (cfg.ui.setpointStepPct / 100) * unit.maxMW;
-    const base = type.variable ? Math.min(unit.setpointMW, unit.availableMW) : unit.setpointMW;
-    state = setSetpoint(state, world, i, base + dir * stepMW, cfg);
-  }
-
-  function togglePower(i) {
+  function act(tech, action) {
     if (state.status !== 'running') return;
-    const unit = state.units[i];
-    const type = world.types[unit.type];
-    if (unit.status === 'online' || unit.status === 'starting') state = stopCommand(state, world, i, cfg);
-    else if (canStart(unit, type)) state = startCommand(state, world, i, cfg);
+    state = techAction(state, world, tech, action, cfg);
   }
 
-  function renderCard(c, unit) {
-    const type = world.types[unit.type];
-    c.li.dataset.status = unit.status;
-    c.status.dataset.status = unit.status;
-    setText(c.status, t(`unit.status.${unit.status}`));
-    setText(c.outNow, t('unit.output', { output: formatNumber(unit.outputMW) }));
-    setText(c.outInfo, t('unit.setpoint', { setpoint: formatNumber(unit.setpointMW), max: formatNumber(unit.maxMW) }));
-    c.fill.style.width = `${Math.min(100, (Math.abs(unit.outputMW) / unit.maxMW) * 100)}%`;
-    c.fill.classList.toggle('charging', unit.outputMW < -0.5);
-    c.target.hidden = !canAdjust(unit);
-    c.target.style.left = `${Math.min(100, (Math.abs(unit.setpointMW) / unit.maxMW) * 100)}%`;
+  function togglePower(tech) {
+    const sum = techSummary(state, world, tech);
+    act(tech, sum.online > 0 || sum.starting > 0 ? 'onlineDown' : 'onlineUp');
+  }
 
-    let detail;
-    if (unit.status === 'starting') detail = t('unit.startsIn', { time: formatDuration(unit.timer) });
-    else if (unit.status === 'stopping') detail = t('unit.stopping');
-    else if (unit.lockedOut) detail = t('unit.lockedOut');
-    else if (type.variable) detail = t('unit.variable', { available: formatNumber(unit.availableMW), curtailed: formatNumber(unit.curtailedMW) });
-    else if (type.storage) detail = t('unit.soc', { pct: formatNumber((unit.socMWh / unit.energyMWh) * 100), energy: formatEnergy(unit.socMWh) });
-    else if (type.energyLimited) detail = t('unit.water', { pct: formatNumber((unit.budgetMWh / unit.energyMWh) * 100) });
-    else if (type.activationLimited) detail = t('unit.dsm', { time: formatDuration(unit.maxActivationMin - unit.activeMin) });
-    else if (unit.status === 'offline') detail = t('unit.startupTakes', { time: formatDuration(type.startupMin) });
-    else detail = t('unit.thermal', { ramp: formatNumber((type.rampPctPerMin / 100) * unit.maxMW), min: formatNumber(setpointRange(unit, type)[0]) });
-    setText(c.detail, detail);
-
-    const [lo, hi] = canAdjust(unit) ? setpointRange(unit, type) : [0, 0];
-    const current = type.variable ? Math.min(unit.setpointMW, unit.availableMW) : unit.setpointMW;
+  function renderCard(c, tech) {
+    const type = world.types[world.techs[tech].type];
+    const s = techSummary(state, world, tech);
+    const multi = s.count > 1;
     const live = state.status === 'running';
-    c.minus.disabled = !live || !canAdjust(unit) || current <= lo + 0.5;
-    c.plus.disabled = !live || !canAdjust(unit) || unit.setpointMW >= hi - 0.5;
+
+    // Status badge.
+    let statusKey;
+    if (multi) statusKey = s.online > 0 ? 'online' : s.starting > 0 ? 'starting' : s.standby > 0 ? 'standby' : 'offline';
+    else statusKey = s.online ? 'online' : s.starting ? 'starting' : s.stopping ? 'stopping' : s.standby ? 'standby' : s.warming ? 'warming' : 'offline';
+    c.li.dataset.status = s.online > 0 || type.variable ? 'online' : 'offline';
+    c.status.dataset.status = statusKey;
+    setText(c.status, multi ? t('unit.fleetStatus', { online: s.online, count: s.count }) : t(`unit.status.${statusKey}`));
+
+    setText(c.outNow, t('unit.output', { output: formatNumber(s.outputMW) }));
+    if (multi) setText(c.outInfo, t('unit.fleetTarget', { setpoint: formatNumber(s.setpointMW), online: formatNumber(s.onlineMW) }));
+    else setText(c.outInfo, t('unit.setpoint', { setpoint: formatNumber(s.setpointMW), max: formatNumber(s.maxMW) }));
+
+    const pct = (v) => `${Math.min(100, (Math.abs(v) / s.maxMW) * 100)}%`;
+    c.onlineBand.style.width = type.variable ? pct(s.availableMW) : pct(s.onlineMW);
+    c.fill.style.width = pct(s.outputMW);
+    c.fill.classList.toggle('charging', s.outputMW < -0.5);
+    c.target.hidden = s.online === 0 || s.auto;
+    c.target.style.left = pct(s.setpointMW);
+
+    // Detail line.
+    const parts = [];
+    if (s.auto) parts.push(t('unit.autoOn'));
+    if (s.starting > 0) parts.push(t('unit.pending', { n: s.starting, time: formatDuration(s.nextOnlineMin ?? 0) }));
+    if (s.warming > 0) parts.push(t('unit.warmingUp', { n: s.warming }));
+    if (s.stopping > 0) parts.push(t('unit.stoppingN', { n: s.stopping }));
+    if (s.lockedOut > 0) parts.push(t('unit.lockedOut'));
+    if (type.variable) parts.push(t('unit.variable', { available: formatNumber(s.availableMW), curtailed: formatNumber(s.curtailedMW) }));
+    else if (type.storage) parts.push(t('unit.soc', { pct: formatNumber((s.socMWh / s.energyMWh) * 100), energy: formatEnergy(s.socMWh) }));
+    else if (type.energyLimited) parts.push(t('unit.water', { pct: formatNumber((s.budgetMWh / s.energyMWh) * 100) }));
+    else if (type.activationLimited) parts.push(t('unit.dsm', { time: formatDuration(s.maxActivationMin - s.activeMin) }));
+    else if (multi) {
+      parts.push(t('unit.offlineCount', { n: s.offline }));
+      if (s.starting === 0) {
+        parts.push(hasStandby(type)
+          ? t('unit.startTimes', { cold: formatDuration(type.startupMin + type.syncMin), warm: formatDuration(type.syncMin) })
+          : t('unit.startupTakes', { time: formatDuration(type.startupMin) }));
+      }
+    } else if (s.online === 0 && s.starting === 0) parts.push(t('unit.startupTakes', { time: formatDuration(type.startupMin) }));
+    setText(c.detail, parts.join(' · '));
+
+    // Buttons.
+    const can = (action) => live && canTechAction(state, world, tech, action);
+    c.minus.disabled = !can('down');
+    c.plus.disabled = !can('up');
+    if (c.online) {
+      setText(c.online.value, String(s.online + s.starting));
+      c.online.minus.disabled = !can('onlineDown');
+      c.online.plus.disabled = !can('onlineUp');
+    }
+    if (c.standby) {
+      setText(c.standby.value, String(s.standby + s.warming));
+      c.standby.minus.disabled = !can('standbyDown');
+      c.standby.plus.disabled = !can('standbyUp');
+    }
     if (c.power) {
-      const label = unit.status === 'online' ? t('unit.stop') : unit.status === 'starting' ? t('unit.cancel') : t('unit.start');
+      const on = s.online > 0 || s.starting > 0;
+      const label = s.online > 0 ? t('unit.stop') : s.starting > 0 ? t('unit.cancel') : t('unit.start');
       setText(c.power, label);
-      c.power.disabled = !live || !(canStop(unit, type) || canStart(unit, type));
-      c.power.setAttribute('aria-label', `${label} ${unitName(unit.name, unit.type)}`);
+      c.power.disabled = !live || !(on ? can('onlineDown') : can('onlineUp'));
+      c.power.setAttribute('aria-label', `${label} ${c.name}`);
+    }
+    if (c.auto) {
+      c.auto.setAttribute('aria-pressed', String(s.auto));
+      c.auto.disabled = !live;
     }
   }
 
@@ -278,11 +349,15 @@ export function createPlay({ cfg, onQuit, operator = null }) {
   function describeEvent(e) {
     switch (e.type) {
       case 'trip':
-        return [t('event.trip', { unit: unitName(e.unit, state.units.find((u) => u.name === e.unit)?.type), mw: formatNumber(e.lostMW) }), e.note ? t(`note.${e.note}`) : ''];
+        return [t('event.trip', { n: e.units, tech: techLabel(e.tech), mw: formatNumber(e.lostMW) }), e.note ? t(`note.${e.note}`) : ''];
       case 'clouds':
         return [t('event.clouds'), ''];
       case 'windCutout':
         return [t('event.windCutout'), ''];
+      case 'windLull':
+        return [t('event.windLull'), ''];
+      case 'demandSurge':
+        return [t('event.demandSurge'), ''];
       case 'warning':
         return [t(`event.warning.${e.about}`, { time: formatClock(e.atMin) }), ''];
       case 'shed':
@@ -347,7 +422,7 @@ export function createPlay({ cfg, onQuit, operator = null }) {
     renderedSpeed = speedIndex;
     renderTop();
     renderSide();
-    state.units.forEach((unit, i) => renderCard(cards[i], unit));
+    cards.forEach((c, tech) => renderCard(c, tech));
     renderLog();
     if (state.status !== 'running' && $('end-overlay').hidden) showEnd();
   }
@@ -425,7 +500,7 @@ export function createPlay({ cfg, onQuit, operator = null }) {
     } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
       if (target === $('chart')) return;
       e.preventDefault();
-      nudge(selected, e.key === 'ArrowUp' ? 1 : -1);
+      act(selected, e.key === 'ArrowUp' ? 'up' : 'down');
     }
   });
 

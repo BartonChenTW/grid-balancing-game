@@ -26,7 +26,7 @@ The game is in **English and Traditional Chinese (繁體中文)**. It follows th
 ### How a game works
 
 1. **About:** what the game is about and your goal.
-2. **Set up:** pick a fleet (Taiwan 2016, 2025, 2050, or your own mix), a day (summer or winter, weekday or weekend, Lunar New Year, typhoon) and a difficulty.
+2. **Set up:** pick a fleet (Taiwan 2016, 2025, 2050, or your own mix), a day (summer or winter, weekday or weekend, Lunar New Year, typhoon) and a difficulty. Options: accidents (none, scheduled, random, or both), the assist, automatic storage and demand response, and gas peakers as automatic backup.
 3. **Operate:** follow the demand forecast. Slow plants need hours to start; fast ones, storage and demand response handle the swings. Keep frequency in the green band until midnight.
 
 At the end you get a score, the key numbers (time in band, load shedding, cost, CO₂, renewable share, curtailment) and a one-line lesson based on what happened.
@@ -42,10 +42,11 @@ Keyboard: **Space** pauses, **1–9, 0** select a unit, **↑/↓** adjust it. O
 All game rules are in [js/sim.js](js/sim.js) and [js/units.js](js/units.js), which are pure functions with no browser code, so they can be tested and reused. Every tunable number is in [js/config.js](js/config.js) and [data/unit-types.json](data/unit-types.json).
 
 - **Balance and frequency.** A single-mass swing equation: `df/dt = f0 / (2·Ek) · imbalance − D·(f − f0)`, where `Ek = Σ H·S` is the kinetic energy of spinning (synchronous) machines. Solar, wind and batteries add none, so high-renewable grids move faster. Time is compressed from seconds to game minutes so you can see it happen.
-- **Units** follow `offline → starting → online → stopping`. They have start-up times (coal 8 h, gas CCGT 2 h, peakers 15 min), ramp limits, minimum stable output, and nuclear cannot restart within the day. Hydro has a daily water budget, storage has a state of charge and round-trip losses, and demand response has a daily activation limit. Solar and wind follow the weather and can only be curtailed.
+- **Fleets of units.** Each technology is one card made of identical units (e.g. 27 coal units of about 700 MW). You set how many are **online**, on warm **standby**, or **offline**, and move the output of all online units together. Units go `offline → warming → standby → starting → online → stopping`: a cold start takes hours (coal 8 h, gas CCGT 2 h, peakers 15 min), from standby much less (coal 1 h, CCGT 30 min, peakers 5 min), and keeping units warm costs money. Units have ramp limits and minimum stable output; nuclear cannot restart within the day. Hydro has a daily water budget, storage a state of charge and round-trip losses, and demand response a daily activation limit. Solar and wind follow the weather and can only be curtailed.
 - **Automatic response.** Batteries respond to frequency on their own, as Taipower's battery frequency-regulation services do. The optional *assist* adds a governor response on all dispatchable units.
+- **Auto modes** (a switch on each card, defaults in setup). Storage charges in a surplus and discharges in a shortfall; gas peakers wait on standby and start when supply runs short (backup); demand response steps in last. See [js/auto.js](js/auto.js).
 - **Protection.** Below 59.5 Hz, under-frequency relays disconnect 5% of demand per stage; operators reconnect customers only when there is reserve to carry them. Below 58.5 Hz or above 61.5 Hz the grid blacks out.
-- **Events.** Unit trips (inspired by the 2017 Datan and 2022 Hsinta events), passing clouds, and typhoon wind cut-out announced hours ahead.
+- **Accidents.** *Scheduled* events happen at fixed times: unit trips inspired by the 2017 Datan and 2022 Hsinta events, passing clouds, and typhoon wind cut-out announced hours ahead. *Random* accidents strike at random times: units tripping, clouds, sudden wind drops and demand surges.
 
 These are deliberate simplifications for teaching: one node with no transmission limits, no voltage, no reactive power, and constants tuned for playability rather than accuracy. The code comments say where.
 
@@ -85,6 +86,8 @@ js/chart.js           demand/supply chart and frequency strip (canvas)
 js/tutorial.js        first-play tips
 js/sim.js             simulation (pure)
 js/units.js           unit state machine and limits (pure)
+js/fleet.js           technology-level commands and summaries for the cards (pure)
+js/auto.js            automatic storage, demand response and peaker backup (pure)
 js/scenarios.js       data loading, validation, world building, custom mix
 js/score.js           score and end-of-day lesson
 js/config.js          every tunable number

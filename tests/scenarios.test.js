@@ -32,22 +32,25 @@ test('invalid scenarios give clear, specific errors', () => {
       name: 'Broken',
       peakLoadMW: -5,
       units: [
-        { type: 'fusion', name: 'Reactor', maxMW: 100 },
-        { type: 'coal', name: 'Reactor', maxMW: 'big' },
-        { type: 'battery', name: 'B', maxMW: 10 },
+        { type: 'fusion', maxMW: 100 },
+        { type: 'coal', maxMW: 'big', count: 2.5 },
+        { type: 'battery', maxMW: 10, count: 3 },
+        { type: 'coal', maxMW: 100 },
       ],
-      events: [{ timeMin: 2000, type: 'trip', unit: 'Nobody' }],
+      events: [{ timeMin: 2000, type: 'trip', unitType: 'nuclear' }],
     },
     TYPES,
   );
   const text = problems.join('\n');
   assert.match(text, /peakLoadMW/);
   assert.match(text, /units\[0\]\.type "fusion" is not a known unit type/);
-  assert.match(text, /units\[1\]\.name "Reactor" is used twice/);
   assert.match(text, /units\[1\]\.maxMW must be a positive number/);
+  assert.match(text, /units\[1\]\.count must be a whole number/);
+  assert.match(text, /units\[2\]\.count must be 1 for battery/);
   assert.match(text, /units\[2\]\.energyMWh must be a positive number for battery/);
+  assert.match(text, /units\[3\]\.type "coal" appears twice/);
   assert.match(text, /events\[0\]\.timeMin/);
-  assert.match(text, /events\[0\]\.unit "Nobody" is not a unit/);
+  assert.match(text, /events\[0\]\.unitType "nuclear" is not a technology in this scenario/);
 });
 
 test('assertValid throws a DataError naming the file', () => {
@@ -104,27 +107,62 @@ test('auto-commitment keeps nuclear online and brings enough capacity for midnig
   assert.ok(onlineMW > world.peakLoadMW * 0.8);
 });
 
-test('difficulty controls assist and events', async () => {
+test('difficulty sets defaults for assist, accidents and auto modes; options override them', async () => {
   const { types, scenarios, days } = await loadGameData(readJson);
   const typhoon = days.find((d) => d.id === 'typhoon');
   const easy = buildWorld({ scenario: scenarios[1], day: typhoon, types, difficulty: 'easy' });
   const hard = buildWorld({ scenario: scenarios[1], day: typhoon, types, difficulty: 'hard' });
   assert.equal(easy.assist, true);
   assert.equal(easy.events.length, 0);
+  assert.equal(easy.randomAccidents, false);
+  assert.ok(easy.units.filter((u) => u.type === 'battery' || u.type === 'dsm').every((u) => u.auto));
+  assert.ok(easy.units.filter((u) => u.type === 'gasOcgt').every((u) => u.auto));
   assert.equal(hard.assist, false);
   assert.ok(hard.events.length > 0);
-  assert.equal(buildWorld({ scenario: scenarios[1], day: typhoon, types, difficulty: 'hard', assist: true }).assist, true);
+  assert.equal(hard.randomAccidents, true);
+  assert.ok(hard.units.every((u) => !u.auto));
+  const custom = buildWorld({ scenario: scenarios[1], day: typhoon, types, difficulty: 'hard', assist: true, accidents: 'none', autoBackup: true });
+  assert.equal(custom.assist, true);
+  assert.equal(custom.events.length, 0);
+  assert.equal(custom.randomAccidents, false);
+  assert.ok(custom.units.filter((u) => u.type === 'gasOcgt').every((u) => u.auto));
 });
 
-test('custom mix splits large technologies into named blocks', () => {
-  const scenario = customScenario({ coal: 20, solar: 30, battery: 5 }, 40, (type) => type.toUpperCase());
-  const coal = scenario.units.filter((u) => u.type === 'coal');
-  assert.equal(coal.length, 3);
-  assert.deepEqual(coal.map((u) => u.name), ['COAL A', 'COAL B', 'COAL C']);
+test('accident modes: scheduled only, random only, both', async () => {
+  const { types, scenarios, days } = await loadGameData(readJson);
+  const day = days[0];
+  const count = (accidents) => {
+    const state = createState(buildWorld({ scenario: scenarios[1], day, types, accidents }), config, 5);
+    return { scheduled: state.events.filter((e) => !e.random).length, random: state.events.filter((e) => e.random).length };
+  };
+  assert.deepEqual(count('none'), { scheduled: 0, random: 0 });
+  assert.ok(count('scheduled').scheduled > 0 && count('scheduled').random === 0);
+  assert.ok(count('random').scheduled === 0 && count('random').random === config.events.random.count);
+  assert.ok(count('both').scheduled > 0 && count('both').random > 0);
+});
+
+test('scenarios expand into individual units, one technology per card', async () => {
+  const { types, scenarios, days } = await loadGameData(readJson);
+  const world = buildWorld({ scenario: scenarios[1], day: days[0], types });
+  const coal = scenarios[1].units.find((u) => u.type === 'coal');
+  const coalUnits = world.units.filter((u) => u.type === 'coal');
+  assert.equal(coalUnits.length, coal.count);
+  assert.ok(Math.abs(coalUnits.reduce((sum, u) => sum + u.maxMW, 0) - coal.maxMW) < 1e-6);
+  assert.equal(world.techs.length, scenarios[1].units.length);
+  // Auto-commitment brings only part of the coal fleet online at midnight.
+  const online = coalUnits.filter((u) => u.initialState === 'online').length;
+  assert.ok(online > 0 && online <= coal.count);
+});
+
+test('custom mix uses typical unit sizes', () => {
+  const scenario = customScenario({ coal: 21, solar: 30, battery: 5 }, 40, TYPES);
+  const coal = scenario.units.find((u) => u.type === 'coal');
+  assert.equal(coal.count, 30); // 21 GW / 700 MW
+  assert.equal(scenario.units.find((u) => u.type === 'solar').count, 1);
   assert.equal(scenario.units.find((u) => u.type === 'battery').energyMWh, 5000 * 4);
   assert.deepEqual(validateScenario(scenario, TYPES), []);
   const gw = capacityByType(scenario);
-  assert.ok(Math.abs(gw.coal - 20) < 0.01);
+  assert.ok(Math.abs(gw.coal - 21) < 0.01);
 });
 
 test('switching scenarios gives an independent fresh state', async () => {

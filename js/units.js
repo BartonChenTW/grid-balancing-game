@@ -1,17 +1,26 @@
-// Per-unit rules (pure, no DOM): the state machine
-//   offline → starting → online → stopping → offline
-// plus ramping, minimum stable load, storage, energy and activation limits,
-// and renewable curtailment. Unit type parameters come from
-// data/unit-types.json and are passed in as `type`.
+// Per-unit rules (pure, no DOM). One unit is one generating unit; a
+// technology's fleet (e.g. 27 coal units) is a list of identical units.
+//
+// State machine:
+//   offline ──warm up (startupMin)──▶ standby ──sync (syncMin)──▶ online
+//      ▲                                 ▲                          │
+//      └──────── cool down ──────────────┴──── stopping (ramp) ◀────┘
+// Types without syncMin have no standby: offline ──startupMin──▶ online.
+// A cold start straight to online passes through warming and starting.
 //
 // Simplifications, for educators:
 // - A unit that finishes starting is synchronised at 0 MW and then ramps up
 //   to its minimum stable load; it cannot be turned down below it while online.
+// - Standby means "kept warm": no output and no inertia, but a short start.
 // - Storage losses are applied on charging only (round-trip efficiency).
-// - A trip removes capacity instantly; tripped capacity can be restarted.
+// - A trip disconnects the whole unit instantly; it can be restarted.
 
 export function clamp(value, lo, hi) {
   return Math.min(hi, Math.max(lo, value));
+}
+
+export function hasStandby(type) {
+  return (type.syncMin ?? 0) > 0;
 }
 
 /** Allowed setpoint range in MW for an online unit. */
@@ -26,31 +35,50 @@ export function isSynchronised(unit) {
   return unit.status === 'online' || unit.status === 'stopping';
 }
 
+/** Can be told to come online (from offline, warming, standby, or cancelling a stop). */
 export function canStart(unit, type) {
-  return !type.alwaysOnline && !unit.lockedOut && (unit.status === 'offline' || unit.status === 'stopping');
+  if (type.alwaysOnline || unit.lockedOut) return false;
+  if (unit.status === 'warming') return unit.goal !== 'online';
+  return unit.status === 'offline' || unit.status === 'standby' || unit.status === 'stopping';
 }
 
 export function canStop(unit, type) {
   return !type.alwaysOnline && (unit.status === 'online' || unit.status === 'starting');
 }
 
+/** Can be warmed from offline to standby. */
+export function canWarm(unit, type) {
+  return hasStandby(type) && !unit.lockedOut && unit.status === 'offline';
+}
+
+/** Can be let go from standby (or warming towards standby) to offline. */
+export function canCool(unit) {
+  return unit.status === 'standby' || (unit.status === 'warming' && unit.goal === 'standby');
+}
+
 export function canAdjust(unit) {
   return unit.status === 'online';
 }
 
-/** Builds a unit's runtime state from its scenario entry. Output starts at 0; sim.js sets the initial dispatch. */
+/** Builds a unit's runtime state from its (expanded) scenario entry. Output starts at 0; sim.js sets the initial dispatch. */
 export function createUnit(spec, type) {
-  const online = type.alwaysOnline || spec.initialState === 'online';
+  let status = 'offline';
+  if (type.alwaysOnline || spec.initialState === 'online') status = 'online';
+  else if (spec.initialState === 'standby' && hasStandby(type)) status = 'standby';
   const unit = {
     name: spec.name,
     type: spec.type,
+    tech: spec.tech ?? 0,
     maxMW: spec.maxMW,
-    status: online ? 'online' : 'offline',
+    status,
     timer: 0,
+    goal: null,
+    stopTo: null,
     setpointMW: 0,
     outputMW: 0,
     lockedOut: false,
     starts: 0,
+    auto: Boolean(spec.auto && type.autoCapable),
   };
   if (type.variable) {
     unit.setpointMW = spec.maxMW; // no curtailment
@@ -72,26 +100,55 @@ export function createUnit(spec, type) {
   return unit;
 }
 
-export function startUnit(unit, type) {
-  if (!canStart(unit, type)) return unit;
-  if (unit.status === 'stopping') {
-    // Cancel the shutdown: stay synchronised and hold current output.
-    const [lo, hi] = setpointRange(unit, type);
-    return { ...unit, status: 'online', setpointMW: clamp(unit.outputMW, lo, hi) };
-  }
-  if (type.startupMin <= 0) return goOnline({ ...unit, starts: unit.starts + 1 }, type);
-  return { ...unit, status: 'starting', timer: type.startupMin, starts: unit.starts + 1 };
-}
-
-export function stopUnit(unit, type) {
-  if (!canStop(unit, type)) return unit;
-  if (unit.status === 'starting') return { ...unit, status: 'offline', timer: 0 };
-  return { ...unit, status: 'stopping', setpointMW: 0 };
-}
-
 function goOnline(unit, type) {
   const [lo] = setpointRange(unit, type);
-  return { ...unit, status: 'online', timer: 0, outputMW: 0, setpointMW: lo };
+  return { ...unit, status: 'online', timer: 0, goal: null, outputMW: 0, setpointMW: lo };
+}
+
+/** Bring a unit online: cold start, sync from standby, or cancel a shutdown. */
+export function startUnit(unit, type) {
+  if (!canStart(unit, type)) return unit;
+  switch (unit.status) {
+    case 'stopping': {
+      const [lo, hi] = setpointRange(unit, type);
+      return { ...unit, status: 'online', stopTo: null, setpointMW: clamp(unit.outputMW, lo, hi) };
+    }
+    case 'warming':
+      return { ...unit, goal: 'online' };
+    case 'standby':
+      return { ...unit, status: 'starting', timer: type.syncMin, starts: unit.starts + 1 };
+    default: {
+      const started = { ...unit, starts: unit.starts + 1 };
+      if (hasStandby(type)) return { ...started, status: 'warming', timer: type.startupMin, goal: 'online' };
+      if (type.startupMin <= 0) return goOnline(started, type);
+      return { ...started, status: 'starting', timer: type.startupMin };
+    }
+  }
+}
+
+/** Warm a cold unit up to standby. */
+export function warmUnit(unit, type) {
+  if (!canWarm(unit, type)) return unit;
+  return { ...unit, status: 'warming', timer: type.startupMin, goal: 'standby' };
+}
+
+/** Let a standby (or warming) unit cool to offline. */
+export function coolUnit(unit) {
+  if (!canCool(unit)) return unit;
+  return { ...unit, status: 'offline', timer: 0, goal: null };
+}
+
+/**
+ * Take a unit off the grid. An online unit ramps down, then goes to standby
+ * (or offline if the type has no standby, or `to` is 'offline').
+ * A unit still starting goes back where it came from.
+ */
+export function stopUnit(unit, type, to = 'standby') {
+  if (!canStop(unit, type)) return unit;
+  if (unit.status === 'starting') {
+    return { ...unit, status: hasStandby(type) ? 'standby' : 'offline', timer: 0, goal: null };
+  }
+  return { ...unit, status: 'stopping', setpointMW: 0, stopTo: hasStandby(type) ? to : 'offline' };
 }
 
 export function setUnitSetpoint(unit, type, setpointMW) {
@@ -100,21 +157,9 @@ export function setUnitSetpoint(unit, type, setpointMW) {
   return { ...unit, setpointMW: clamp(setpointMW, lo, hi) };
 }
 
-/**
- * Removes `fraction` of the unit's capacity instantly (1 = the whole block).
- * A fully tripped unit goes offline and must be restarted.
- */
-export function tripUnit(unit, fraction = 1) {
-  if (fraction >= 1) {
-    return { ...unit, status: 'offline', timer: 0, outputMW: 0, setpointMW: 0 };
-  }
-  const keep = 1 - fraction;
-  return {
-    ...unit,
-    maxMW: unit.maxMW * keep,
-    outputMW: unit.outputMW * keep,
-    setpointMW: unit.setpointMW * keep,
-  };
+/** A fault disconnects the unit instantly. */
+export function tripUnit(unit) {
+  return { ...unit, status: 'offline', timer: 0, goal: null, stopTo: null, outputMW: 0, setpointMW: 0 };
 }
 
 /**
@@ -130,11 +175,22 @@ export function updateUnit(unit, type, ctx) {
     return { ...unit, availableMW: ctx.availableMW, outputMW, curtailedMW: ctx.availableMW - outputMW };
   }
 
-  if (unit.status === 'offline') return unit.outputMW === 0 ? unit : { ...unit, outputMW: 0 };
-
-  if (unit.status === 'starting') {
-    const timer = unit.timer - stepMinutes;
-    return timer > 0 ? { ...unit, timer } : goOnline(unit, type);
+  switch (unit.status) {
+    case 'offline':
+    case 'standby':
+      return unit.outputMW === 0 ? unit : { ...unit, outputMW: 0 };
+    case 'warming': {
+      const timer = unit.timer - stepMinutes;
+      if (timer > 0) return { ...unit, timer };
+      if (unit.goal === 'online') return { ...unit, status: 'starting', timer: type.syncMin, goal: null };
+      return { ...unit, status: 'standby', timer: 0, goal: null };
+    }
+    case 'starting': {
+      const timer = unit.timer - stepMinutes;
+      return timer > 0 ? { ...unit, timer } : goOnline(unit, type);
+    }
+    default:
+      break;
   }
 
   // Online or stopping: ramp towards the setpoint.
@@ -173,8 +229,9 @@ export function updateUnit(unit, type, ctx) {
 
   next.outputMW = outputMW;
   if (unit.status === 'stopping' && outputMW <= 0) {
-    next.status = 'offline';
     next.outputMW = 0;
+    next.status = unit.stopTo === 'standby' ? 'standby' : 'offline';
+    next.stopTo = null;
     if (type.restartable === false) next.lockedOut = true;
   }
   return next;

@@ -1,5 +1,5 @@
 // Step 2: choose a fleet (or build a custom mix), a day and a difficulty.
-import { capacityByType, customScenario } from './scenarios.js';
+import { ACCIDENT_MODES, capacityByType, customScenario } from './scenarios.js';
 import { formatNumber, t, tOr } from './strings.js';
 
 const STORAGE_KEY = 'ftl.setup.v1';
@@ -40,7 +40,10 @@ export function createSetup({ data, cfg, onStart, onBack }) {
     fleet: data.scenarios[1]?.id ?? data.scenarios[0].id,
     day: data.days[0].id,
     difficulty: 'easy',
-    assist: true,
+    assist: cfg.difficulties.easy.assist,
+    accidents: cfg.difficulties.easy.accidents,
+    autoStorage: cfg.difficulties.easy.autoStorage,
+    autoBackup: cfg.difficulties.easy.autoBackup,
     customBase: baseScenario.id,
     custom: capacityByType(baseScenario),
     customPeakGW: baseScenario.peakLoadMW / 1000,
@@ -48,6 +51,7 @@ export function createSetup({ data, cfg, onStart, onBack }) {
   };
   if (selection.fleet !== 'custom' && !data.scenarios.some((s) => s.id === selection.fleet)) selection.fleet = data.scenarios[0].id;
   if (!data.days.some((d) => d.id === selection.day)) selection.day = data.days[0].id;
+  if (!ACCIDENT_MODES.includes(selection.accidents)) selection.accidents = cfg.difficulties[selection.difficulty]?.accidents ?? 'none';
 
   // ---- Choices ------------------------------------------------------------
 
@@ -110,10 +114,27 @@ export function createSetup({ data, cfg, onStart, onBack }) {
     difficultyItems,
     (id) => selection.difficulty === id,
     (id) => {
+      // A difficulty is a preset; the options below can still be changed.
       selection.difficulty = id;
-      selection.assist = cfg.difficulties[id].assist;
+      const d = cfg.difficulties[id];
+      Object.assign(selection, { assist: d.assist, accidents: d.accidents, autoStorage: d.autoStorage, autoBackup: d.autoBackup });
     },
   );
+
+  const accidentItems = ACCIDENT_MODES.map((id) => ({ id, title: t(`accidents.${id}`), description: t(`accidents.${id}.hint`) }));
+  const refreshAccidents = radioGroup(
+    $('accident-options'),
+    accidentItems,
+    (id) => selection.accidents === id,
+    (id) => (selection.accidents = id),
+  );
+
+  for (const [id, key] of [['auto-storage-toggle', 'autoStorage'], ['auto-backup-toggle', 'autoBackup']]) {
+    $(id).addEventListener('change', (e) => {
+      selection[key] = e.target.checked;
+      refresh();
+    });
+  }
 
   $('assist-toggle').addEventListener('change', (e) => {
     selection.assist = e.target.checked;
@@ -185,7 +206,7 @@ export function createSetup({ data, cfg, onStart, onBack }) {
 
   function currentScenario() {
     if (selection.fleet === 'custom') {
-      return customScenario(selection.custom, selection.customPeakGW, (type) => t(`unitType.${type}`), cfg);
+      return customScenario(selection.custom, selection.customPeakGW, data.types, cfg);
     }
     return data.scenarios.find((s) => s.id === selection.fleet);
   }
@@ -269,7 +290,10 @@ export function createSetup({ data, cfg, onStart, onBack }) {
     refreshFleet();
     refreshDay();
     refreshDifficulty();
+    refreshAccidents();
     $('assist-toggle').checked = selection.assist;
+    $('auto-storage-toggle').checked = selection.autoStorage;
+    $('auto-backup-toggle').checked = selection.autoBackup;
     $('custom-panel').hidden = selection.fleet !== 'custom';
     chipButtons.forEach(([id, b]) => b.setAttribute('aria-pressed', String(selection.customBase === id)));
     renderSummary();
@@ -283,6 +307,9 @@ export function createSetup({ data, cfg, onStart, onBack }) {
       day: currentDay(),
       difficulty: selection.difficulty,
       assist: selection.assist,
+      accidents: selection.accidents,
+      autoStorage: selection.autoStorage,
+      autoBackup: selection.autoBackup,
     });
   });
 

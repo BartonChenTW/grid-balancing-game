@@ -1,58 +1,58 @@
 {
-  "_comment": "Illustrative values tuned for gameplay, not engineering data. startupMin/shutdownMin in game minutes, rampPctPerMin and minStablePct in % of unit max, inertiaH in seconds, costPerMWh in NT$ (placeholder marginal cost), co2PerMWh in tonnes.",
+  "_comment": "Illustrative values tuned for gameplay, not engineering data. startupMin: cold start to warm standby (units without syncMin go straight online); syncMin: standby to online; shutdownMin in game minutes; rampPctPerMin and minStablePct in % of unit size; inertiaH in seconds; costPerMWh in NT$ (placeholder marginal cost); standbyCostPerMWh: NT$ per MW of unit size per hour kept warm; co2PerMWh in tonnes; unitMW: typical unit size used by the custom mix.",
   "nuclear": {
     "startupMin": 2880, "shutdownMin": 60, "rampPctPerMin": 0.5, "minStablePct": 70,
-    "inertiaH": 6, "costPerMWh": 1000, "co2PerMWh": 0,
+    "inertiaH": 6, "costPerMWh": 1000, "co2PerMWh": 0, "unitMW": 950,
     "dispatchable": true, "restartable": false, "mustRun": true
   },
   "coal": {
-    "startupMin": 480, "shutdownMin": 60, "rampPctPerMin": 1.5, "minStablePct": 40,
-    "inertiaH": 5, "costPerMWh": 1800, "co2PerMWh": 0.9,
+    "startupMin": 420, "syncMin": 60, "shutdownMin": 60, "rampPctPerMin": 1.5, "minStablePct": 40,
+    "inertiaH": 5, "costPerMWh": 1800, "standbyCostPerMWh": 150, "co2PerMWh": 0.9, "unitMW": 700,
     "dispatchable": true
   },
   "gasCcgt": {
-    "startupMin": 120, "shutdownMin": 30, "rampPctPerMin": 4, "minStablePct": 45,
-    "inertiaH": 4, "costPerMWh": 3200, "co2PerMWh": 0.37,
+    "startupMin": 90, "syncMin": 30, "shutdownMin": 30, "rampPctPerMin": 4, "minStablePct": 45,
+    "inertiaH": 4, "costPerMWh": 3200, "standbyCostPerMWh": 200, "co2PerMWh": 0.37, "unitMW": 600,
     "dispatchable": true
   },
   "gasOcgt": {
-    "startupMin": 15, "shutdownMin": 10, "rampPctPerMin": 15, "minStablePct": 30,
-    "inertiaH": 3, "costPerMWh": 5000, "co2PerMWh": 0.55,
-    "dispatchable": true
+    "startupMin": 10, "syncMin": 5, "shutdownMin": 10, "rampPctPerMin": 15, "minStablePct": 30,
+    "inertiaH": 3, "costPerMWh": 5000, "standbyCostPerMWh": 150, "co2PerMWh": 0.55, "unitMW": 200,
+    "dispatchable": true, "autoCapable": true
   },
   "oil": {
-    "startupMin": 30, "shutdownMin": 15, "rampPctPerMin": 10, "minStablePct": 30,
-    "inertiaH": 3, "costPerMWh": 6500, "co2PerMWh": 0.75,
+    "startupMin": 20, "syncMin": 10, "shutdownMin": 15, "rampPctPerMin": 10, "minStablePct": 30,
+    "inertiaH": 3, "costPerMWh": 6500, "standbyCostPerMWh": 150, "co2PerMWh": 0.75, "unitMW": 500,
     "dispatchable": true
   },
   "hydro": {
     "startupMin": 5, "shutdownMin": 5, "rampPctPerMin": 50, "minStablePct": 10,
-    "inertiaH": 3, "costPerMWh": 300, "co2PerMWh": 0,
+    "inertiaH": 3, "costPerMWh": 300, "co2PerMWh": 0, "unitMW": 3000,
     "dispatchable": true, "energyLimited": true
   },
   "pumpedHydro": {
     "startupMin": 5, "shutdownMin": 5, "rampPctPerMin": 50, "minStablePct": 0,
-    "inertiaH": 3, "costPerMWh": 0, "co2PerMWh": 0,
-    "dispatchable": true, "storage": true, "efficiency": 0.75
+    "inertiaH": 3, "costPerMWh": 0, "co2PerMWh": 0, "unitMW": 10000,
+    "dispatchable": true, "storage": true, "efficiency": 0.75, "autoCapable": true
   },
   "battery": {
     "startupMin": 0, "shutdownMin": 0, "rampPctPerMin": 100, "minStablePct": 0,
-    "inertiaH": 0, "costPerMWh": 0, "co2PerMWh": 0,
-    "dispatchable": true, "storage": true, "efficiency": 0.9, "alwaysOnline": true, "fastResponse": true
+    "inertiaH": 0, "costPerMWh": 0, "co2PerMWh": 0, "unitMW": 40000,
+    "dispatchable": true, "storage": true, "efficiency": 0.9, "alwaysOnline": true, "fastResponse": true, "autoCapable": true
   },
   "dsm": {
     "startupMin": 2, "shutdownMin": 0, "rampPctPerMin": 50, "minStablePct": 0,
-    "inertiaH": 0, "costPerMWh": 8000, "co2PerMWh": 0,
-    "dispatchable": true, "activationLimited": true
+    "inertiaH": 0, "costPerMWh": 8000, "co2PerMWh": 0, "unitMW": 8000,
+    "dispatchable": true, "activationLimited": true, "autoCapable": true
   },
   "solar": {
     "startupMin": 0, "shutdownMin": 0, "rampPctPerMin": 100, "minStablePct": 0,
-    "inertiaH": 0, "costPerMWh": 0, "co2PerMWh": 0,
+    "inertiaH": 0, "costPerMWh": 0, "co2PerMWh": 0, "unitMW": 100000,
     "dispatchable": false, "variable": "solar", "alwaysOnline": true
   },
   "wind": {
     "startupMin": 0, "shutdownMin": 0, "rampPctPerMin": 100, "minStablePct": 0,
-    "inertiaH": 0, "costPerMWh": 0, "co2PerMWh": 0,
+    "inertiaH": 0, "costPerMWh": 0, "co2PerMWh": 0, "unitMW": 60000,
     "dispatchable": false, "variable": "wind", "alwaysOnline": true
   }
 }

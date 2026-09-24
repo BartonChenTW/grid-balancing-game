@@ -208,5 +208,13 @@ game by reading the forecast lines; there is no separate day-ahead phase.
   `js/score.js`, `data/days.json`, `tools/make-days.js`, `tools/autopilot.js`,
   `tools/balance-report.js`. `?demo` lets the autopilot play in the browser.
 
-**Next:** real 10-minute Taipower day curves; deploy to GitHub Pages; playtest and tune
-difficulty with real players.
+**Player feedback round 1 (2026-09-24):**
+- One card per technology; the player sets how many units are online, on warm standby
+  or offline. Scenario files list technologies with `count`; units are expanded at load.
+  New states: warming (cold → standby) and standby (warm, quick to sync, costs money).
+- Auto modes: storage and demand response, and gas peakers as automatic backup
+  (`js/auto.js`); a switch per card and defaults in setup (on in Easy).
+- Accident setting: none, scheduled, random, both (random: trips, clouds, wind lulls,
+  demand surges). Trips now disconnect whole units by type and count or MW.
+
+**Next:** real 10-minute Taipower day curves; playtest and tune difficulty with real players.

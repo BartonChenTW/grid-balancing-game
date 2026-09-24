@@ -3,12 +3,14 @@ import assert from 'node:assert/strict';
 
 import {
   canStart,
+  coolUnit,
   createUnit,
   setUnitSetpoint,
   startUnit,
   stopUnit,
   tripUnit,
   updateUnit,
+  warmUnit,
 } from '../js/units.js';
 import { TYPES, near } from './helpers.js';
 
@@ -24,9 +26,9 @@ function make(type, maxMW = 1000, spec = {}) {
 }
 
 for (const [type, startupMin] of [['coal', 480], ['gasCcgt', 120], ['gasOcgt', 15], ['oil', 30]]) {
-  test(`${type} takes ${startupMin} minutes to start, then ramps up to minimum stable load`, () => {
+  test(`${type} takes ${startupMin} minutes from cold, then ramps up to minimum stable load`, () => {
     let unit = startUnit(make(type), TYPES[type]);
-    assert.equal(unit.status, 'starting');
+    assert.equal(unit.status, 'warming');
     unit = tick(unit, startupMin - 1);
     assert.equal(unit.status, 'starting');
     assert.equal(unit.outputMW, 0);
@@ -44,21 +46,44 @@ test('online thermal units cannot be set below minimum stable load', () => {
   assert.equal(setUnitSetpoint(unit, TYPES.gasCcgt, 2000).setpointMW, 1000);
 });
 
-test('stopping ramps output down to zero, then the unit is offline', () => {
+test('stopping ramps output down to zero, then the unit waits warm on standby', () => {
   let unit = { ...make('coal', 1000, { initialState: 'online' }), outputMW: 600, setpointMW: 600 };
   unit = stopUnit(unit, TYPES.coal);
   assert.equal(unit.status, 'stopping');
   unit = tick(unit, 10);
   assert.ok(unit.outputMW < 600 && unit.outputMW > 0);
   unit = tick(unit, 120);
-  assert.equal(unit.status, 'offline');
+  assert.equal(unit.status, 'standby');
   assert.equal(unit.outputMW, 0);
+  // Or all the way to offline.
+  const cold = tick(stopUnit({ ...make('coal', 1000, { initialState: 'online' }), outputMW: 600 }, TYPES.coal, 'offline'), 200);
+  assert.equal(cold.status, 'offline');
+});
+
+test('standby: warm up from cold, come online quickly, or cool down', () => {
+  let unit = warmUnit(make('coal'), TYPES.coal);
+  assert.equal(unit.status, 'warming');
+  unit = tick(unit, TYPES.coal.startupMin);
+  assert.equal(unit.status, 'standby');
+  const online = tick(startUnit(unit, TYPES.coal), TYPES.coal.syncMin);
+  assert.equal(online.status, 'online');
+  assert.equal(coolUnit(unit).status, 'offline');
+});
+
+test('units without standby (peaking hydro) go straight from offline to online', () => {
+  let unit = startUnit(make('pumpedHydro', 100, { energyMWh: 500 }), TYPES.pumpedHydro);
+  assert.equal(unit.status, 'starting');
+  unit = tick(unit, TYPES.pumpedHydro.startupMin);
+  assert.equal(unit.status, 'online');
+  assert.equal(warmUnit(make('pumpedHydro', 100, { energyMWh: 500 }), TYPES.pumpedHydro).status, 'offline');
 });
 
 test('a start can be cancelled, and a shutdown can be cancelled', () => {
-  let unit = startUnit(make('coal'), TYPES.coal);
+  let unit = startUnit(warmUnit(make('coal'), TYPES.coal), TYPES.coal);
+  unit = tick(unit, TYPES.coal.startupMin);
+  assert.equal(unit.status, 'starting');
   unit = stopUnit(unit, TYPES.coal);
-  assert.equal(unit.status, 'offline');
+  assert.equal(unit.status, 'standby');
 
   unit = { ...make('coal', 1000, { initialState: 'online' }), outputMW: 600, setpointMW: 600 };
   unit = startUnit(stopUnit(unit, TYPES.coal), TYPES.coal);
@@ -151,12 +176,10 @@ test('wind cannot be started or stopped, only curtailed', () => {
   assert.equal(stopUnit(unit, TYPES.wind), unit);
 });
 
-test('a partial trip removes a fraction of capacity; a full trip takes the unit offline', () => {
+test('a trip disconnects the unit instantly', () => {
   const unit = { ...make('coal', 1000, { initialState: 'online' }), outputMW: 800, setpointMW: 800 };
-  const partial = tripUnit(unit, 0.25);
-  assert.equal(partial.maxMW, 750);
-  assert.equal(partial.outputMW, 600);
-  const full = tripUnit(unit, 1);
-  assert.equal(full.status, 'offline');
-  assert.equal(full.outputMW, 0);
+  const tripped = tripUnit(unit);
+  assert.equal(tripped.status, 'offline');
+  assert.equal(tripped.outputMW, 0);
+  assert.equal(canStart(tripped, TYPES.coal), true);
 });

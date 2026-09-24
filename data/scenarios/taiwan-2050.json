@@ -11,16 +11,13 @@
     { "what": "Demand growth outlook", "url": "https://data.gov.tw/dataset/16437" }
   ],
   "units": [
-    { "type": "gasCcgt", "name": "Gas/H₂ CCGT A", "maxMW": 10500 },
-    { "type": "gasCcgt", "name": "Gas/H₂ CCGT B", "maxMW": 10500 },
-    { "type": "gasCcgt", "name": "Gas/H₂ CCGT C", "maxMW": 10500 },
-    { "type": "gasCcgt", "name": "Gas/H₂ CCGT D", "maxMW": 10500 },
-    { "type": "gasOcgt", "name": "Gas/H₂ peakers", "maxMW": 8000 },
-    { "type": "hydro", "name": "Hydro", "maxMW": 2200, "energyMWh": 15000, "initialState": "online", "initialPct": 10 },
-    { "type": "pumpedHydro", "name": "Pumped hydro", "maxMW": 4600, "energyMWh": 27600, "initialSocPct": 60 },
+    { "type": "gasCcgt", "name": "Gas/H₂ CCGT", "maxMW": 42000, "count": 60 },
+    { "type": "gasOcgt", "name": "Gas/H₂ peakers", "maxMW": 8000, "count": 20 },
+    { "type": "hydro", "maxMW": 2200, "energyMWh": 15000, "initialState": "online", "initialPct": 10 },
+    { "type": "pumpedHydro", "maxMW": 4600, "energyMWh": 27600, "initialSocPct": 60 },
     { "type": "battery", "name": "Batteries", "maxMW": 20000, "energyMWh": 80000, "initialSocPct": 50 },
-    { "type": "dsm", "name": "Demand response", "maxMW": 4000, "maxActivationMin": 300 },
-    { "type": "solar", "name": "Solar", "maxMW": 60000 },
+    { "type": "dsm", "maxMW": 4000, "maxActivationMin": 300 },
+    { "type": "solar", "maxMW": 60000 },
     { "type": "wind", "name": "Offshore wind", "maxMW": 40000 }
   ],
   "events": []

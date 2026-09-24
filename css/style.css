@@ -220,7 +220,10 @@ legend { font-weight: 700; padding: 0 6px; }
 .summary-rows { display: grid; gap: 6px; margin: 0 0 12px; }
 .summary-rows div { display: flex; justify-content: space-between; gap: 12px; }
 .summary-rows dt { color: var(--text-2); }
-.summary-rows dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+.summary-rows dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.summary-rows .sub { font-size: 0.85rem; margin-top: -2px; }
+.summary-rows .sub dt { display: flex; align-items: center; gap: 6px; padding-left: 12px; }
+.summary-rows .sub dd { font-weight: 500; color: var(--text-2); }
 .meter { position: relative; height: 14px; border-radius: 7px; background: var(--grid); overflow: hidden; margin: 18px 0 4px; }
 .meter span { position: absolute; top: 0; bottom: 0; }
 .meter .m-firm { left: 0; background: var(--series-hydro); }

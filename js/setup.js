@@ -1,6 +1,6 @@
 // Step 2: choose a fleet (or build a custom mix), a day and a difficulty.
 import { ACCIDENT_MODES, capacityByType, customScenario } from './scenarios.js';
-import { formatNumber, t, tOr } from './strings.js';
+import { formatNumber, t, tOr, unitName } from './strings.js';
 
 const STORAGE_KEY = 'ftl.setup.v1';
 
@@ -219,15 +219,17 @@ export function createSetup({ data, cfg, onStart, onBack }) {
     const scenario = currentScenario();
     const day = currentDay();
     const types = data.types;
-    let firm = 0;
-    let flex = 0;
-    let renewable = 0;
+    // Group technologies: firm (thermal, nuclear, hydro), storage + DSM, solar + wind.
+    const groups = { firm: [], flex: [], renewable: [] };
     for (const u of scenario.units) {
       const type = types[u.type];
-      if (type.variable) renewable += u.maxMW;
-      else if (type.storage || type.activationLimited) flex += u.maxMW;
-      else firm += u.maxMW;
+      const group = type.variable ? 'renewable' : type.storage || type.activationLimited ? 'flex' : 'firm';
+      groups[group].push(u);
     }
+    const total = (list) => list.reduce((sum, u) => sum + u.maxMW, 0);
+    const firm = total(groups.firm);
+    const flex = total(groups.flex);
+    const renewable = total(groups.renewable);
     const peak = scenario.peakLoadMW * day.peakRatio;
     const margin = ((firm + flex - peak) / peak) * 100;
 
@@ -237,10 +239,25 @@ export function createSetup({ data, cfg, onStart, onBack }) {
       d.append(el('dt', '', label), el('dd', '', value));
       rows.append(d);
     };
+    // One indented row per technology, largest first.
+    const breakdown = (list) => {
+      for (const u of [...list].sort((a, b) => b.maxMW - a.maxMW)) {
+        const d = el('div', 'sub');
+        const dt = el('dt');
+        const sw = el('span', 'swatch');
+        sw.style.setProperty('--key', `var(--series-${groupOfType[u.type] ?? 'other'})`);
+        dt.append(sw, document.createTextNode(u.name ? unitName(u.name, u.type) : t(`unitType.${u.type}`)));
+        d.append(dt, el('dd', '', gw(u.maxMW)));
+        rows.append(d);
+      }
+    };
     add(t('setup.peakToday'), gw(peak));
     add(t('setup.firm'), gw(firm));
+    breakdown(groups.firm);
     add(t('setup.flexible'), gw(flex));
+    breakdown(groups.flex);
     add(t('setup.renewable'), gw(renewable));
+    breakdown(groups.renewable);
     add(t('setup.margin'), `${margin >= 0 ? '+' : ''}${formatNumber(margin)}%`);
 
     const scale = Math.max(firm + flex, peak) * 1.1 || 1;

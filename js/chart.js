@@ -31,7 +31,9 @@ function setupCanvas(canvas) {
   return { ctx, width: rect.width, height: rect.height };
 }
 
-export function createChart({ canvas, freqCanvas, tooltip, legend, cfg }) {
+// miniCanvas (optional): a compact copy of the main chart, shown in the
+// sticky top bar when the full chart has scrolled out of view.
+export function createChart({ canvas, freqCanvas, miniCanvas = null, tooltip, legend, cfg }) {
   const groups = cfg.ui.chartGroups;
   const groupOf = {};
   groups.forEach((g, i) => g.types.forEach((type) => (groupOf[type] = i)));
@@ -143,6 +145,7 @@ export function createChart({ canvas, freqCanvas, tooltip, legend, cfg }) {
     if (!colors) readColors();
     drawMain(state);
     drawFrequency(state);
+    drawMini(state);
     if (cursor !== null) showTooltip();
   }
 
@@ -188,8 +191,20 @@ export function createChart({ canvas, freqCanvas, tooltip, legend, cfg }) {
       ctx.fillText(`${formatNumber(v / 1000)} GW`, L.left - 6, yy);
     }
     drawTimeAxis(ctx, L, x, L.top + plotH);
+    drawSeries(ctx, x, y, state);
 
-    // Stacked areas (history).
+    // Now marker.
+    const nx = drawNow(ctx, x, state, L.top, L.top + plotH);
+    ctx.fillStyle = colors.ink2;
+    ctx.textAlign = state.minute > DAY * 0.9 ? 'right' : 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(t('chart.now'), nx + (ctx.textAlign === 'left' ? 4 : -4), L.top + 2);
+
+    drawCursor(ctx, L, x, L.top, L.top + plotH);
+  }
+
+  /** Stacked supply, demand, storage charging and forecast lines (shared by the full and mini charts). */
+  function drawSeries(ctx, x, y, state) {
     const until = Math.min(history.until, state.minute);
     if (until >= 1) {
       const base = new Float32Array(until + 1);
@@ -238,21 +253,61 @@ export function createChart({ canvas, freqCanvas, tooltip, legend, cfg }) {
     ctx.beginPath();
     f.net.forEach(([m, v]) => ctx.lineTo(x(m), y(Math.max(0, v))));
     line(ctx, colors.muted, 1.5, [2, 3]);
+  }
 
-    // Now marker.
+  function drawNow(ctx, x, state, top, bottom) {
     const nx = Math.round(x(state.minute)) + 0.5;
     ctx.strokeStyle = colors.muted;
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(nx, L.top);
-    ctx.lineTo(nx, L.top + plotH);
+    ctx.moveTo(nx, top);
+    ctx.lineTo(nx, bottom);
     ctx.stroke();
-    ctx.fillStyle = colors.ink2;
-    ctx.textAlign = state.minute > DAY * 0.9 ? 'right' : 'left';
-    ctx.textBaseline = 'top';
-    ctx.fillText(t('chart.now'), nx + (ctx.textAlign === 'left' ? 4 : -4), L.top + 2);
+    return nx;
+  }
 
-    drawCursor(ctx, L, x, L.top, L.top + plotH);
+  // ---- Mini chart (sticky, when the full chart is out of view) ---------------
+
+  function drawMini(state) {
+    if (!miniCanvas || miniCanvas.offsetParent === null) return; // hidden
+    const { ctx, width, height } = setupCanvas(miniCanvas);
+    const L = { left: 34, right: 6, top: 3, bottom: 14 };
+    const plotW = width - L.left - L.right;
+    const plotH = height - L.top - L.bottom;
+    const x = (m) => L.left + (m / DAY) * plotW;
+    const y = (mw) => L.top + plotH - (mw / yMaxMW) * plotH;
+
+    ctx.fillStyle = colors.surface;
+    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = colors.grid;
+    ctx.globalAlpha = 0.35;
+    ctx.fillRect(x(state.minute), L.top, x(DAY) - x(state.minute), plotH);
+    ctx.globalAlpha = 1;
+
+    // One mid gridline and the baseline, labelled in GW.
+    const step = niceStep(yMaxMW / 1000, 2) * 1000;
+    ctx.font = '10px system-ui, -apple-system, "Segoe UI", sans-serif';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.lineWidth = 1;
+    for (let v = 0; v <= yMaxMW; v += step) {
+      const yy = Math.round(y(v)) + 0.5;
+      ctx.strokeStyle = v === 0 ? colors.axis : colors.grid;
+      ctx.beginPath();
+      ctx.moveTo(L.left, yy);
+      ctx.lineTo(L.left + plotW, yy);
+      ctx.stroke();
+      ctx.fillStyle = colors.muted;
+      ctx.fillText(`${formatNumber(v / 1000)} GW`, L.left - 4, yy);
+    }
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    for (let m = 0; m <= DAY; m += 360) {
+      ctx.fillText(formatClock(m).slice(0, 2), Math.min(Math.max(x(m), L.left + 6), L.left + plotW - 6), L.top + plotH + 2);
+    }
+
+    drawSeries(ctx, x, y, state);
+    drawNow(ctx, x, state, L.top, L.top + plotH);
   }
 
   function line(ctx, color, width, dash) {
@@ -428,7 +483,9 @@ export function createChart({ canvas, freqCanvas, tooltip, legend, cfg }) {
   });
   canvas.addEventListener('blur', () => setCursor(null));
 
-  new ResizeObserver(() => latest && draw(latest, true)).observe(canvas);
+  const resize = new ResizeObserver(() => latest && draw(latest, true));
+  resize.observe(canvas);
+  if (miniCanvas) resize.observe(miniCanvas);
   const scheme = window.matchMedia('(prefers-color-scheme: dark)');
   scheme.addEventListener('change', () => {
     readColors();

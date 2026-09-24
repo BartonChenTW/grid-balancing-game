@@ -149,6 +149,9 @@
             <div class="gauge-needle" id="gauge-needle"></div>
           </div>
         </div>
+        <button type="button" class="mini-chart-wrap" id="mini-chart-wrap">
+          <canvas id="mini-chart" class="mini-chart" aria-hidden="true"></canvas>
+        </button>
         <div class="controls">
           <div class="speeds" id="speeds" role="group"></div>
           <button type="button" class="icon-btn" id="help-btn">?</button>
@@ -164,7 +167,7 @@
           <div class="chart-head">
             <h2 data-i18n="chart.title"></h2>
           </div>
-          <div class="chart-wrap">
+          <div class="chart-wrap" id="chart-wrap">
             <canvas id="chart" tabindex="0" role="img"></canvas>
             <canvas id="freq-chart" class="freq-chart" aria-hidden="true"></canvas>
             <div class="chart-tooltip" id="chart-tooltip" hidden></div>

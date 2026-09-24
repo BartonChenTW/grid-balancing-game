@@ -29,11 +29,30 @@ export function createPlay({ cfg, onQuit, operator = null }) {
   const chart = createChart({
     canvas: $('chart'),
     freqCanvas: $('freq-chart'),
+    miniCanvas: $('mini-chart'),
     tooltip: $('chart-tooltip'),
     legend: $('legend'),
     cfg,
   });
   $('chart').setAttribute('aria-label', t('chart.label'));
+
+  // Show a compact chart in the sticky top bar once the full chart scrolls
+  // out of view, so the player can follow demand and supply from the unit cards.
+  const playBar = document.querySelector('.play-bar');
+  const miniWrap = $('mini-chart-wrap');
+  miniWrap.setAttribute('aria-label', t('chart.mini'));
+  miniWrap.title = t('chart.mini');
+  // The full chart sits right under the sticky bar at the top of the page.
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  miniWrap.addEventListener('click', () => window.scrollTo({ top: 0, behavior: reduceMotion.matches ? 'auto' : 'smooth' }));
+  new IntersectionObserver(
+    ([entry]) => {
+      const hidden = !entry.isIntersecting && running;
+      playBar.classList.toggle('show-mini', hidden);
+      if (hidden && state) chart.draw(state, true);
+    },
+    { rootMargin: `-${Math.round(playBar.getBoundingClientRect().height || 120)}px 0px 0px 0px`, threshold: 0 },
+  ).observe($('chart-wrap'));
 
   let world = null;
   let meta = null;

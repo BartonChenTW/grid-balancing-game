@@ -273,6 +273,16 @@ legend { font-weight: 700; padding: 0 6px; }
   transition: left 0.15s linear;
 }
 .controls { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+/* Compact chart in the sticky bar, shown only when the full chart is out of view. */
+/* It floats just below the bar, so showing it never shifts the page. */
+.mini-chart-wrap {
+  display: none; position: absolute; top: calc(100% + 6px); left: 12px; right: 12px;
+  max-width: 1256px; margin: 0 auto; padding: 0; min-height: 0;
+  border: 1px solid var(--border); border-radius: var(--radius-s); background: var(--chart-surface);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.14); cursor: pointer; overflow: hidden;
+}
+.play-bar.show-mini .mini-chart-wrap { display: block; }
+.mini-chart { display: block; width: 100%; height: 96px; }
 .speeds { display: flex; gap: 4px; }
 .speeds button { padding: 0 10px; }
 .icon-btn { padding: 0; width: 44px; font-size: 1.1rem; }
@@ -420,6 +430,7 @@ legend { font-weight: 700; padding: 0 6px; }
   .day-label { max-width: 34vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.75rem; }
   .freq-value { font-size: 1.5rem; }
   .freq-band { font-size: 0.72rem; padding: 1px 8px; }
+  .mini-chart { height: 76px; }
   #chart { height: 220px; }
   .units { grid-template-columns: 1fr; }
   .end-metrics { grid-template-columns: 1fr; }

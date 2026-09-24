@@ -96,6 +96,7 @@ export const zhTW = {
   'chart.netForecast': '淨負載預測（扣除光電與風力）',
   'chart.charging': '負載＋儲能充電',
   'chart.now': '現在',
+  'chart.mini': '負載與供電（點一下看完整圖表）',
   'chart.freqTitle': '頻率',
   'chart.hz': '{v} Hz',
 

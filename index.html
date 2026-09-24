@@ -185,10 +185,23 @@
             <div id="reserve-stat"><dt data-i18n="stat.reserve"></dt><dd id="s-reserve"></dd><small id="s-reserve-hint"></small></div>
             <div><dt data-i18n="stat.auto"></dt><dd id="s-auto"></dd></div>
             <div><dt data-i18n="stat.curtailed"></dt><dd id="s-curtailed"></dd></div>
-            <div><dt data-i18n="stat.cost"></dt><dd id="s-cost"></dd></div>
-            <div><dt data-i18n="stat.co2"></dt><dd id="s-co2"></dd></div>
             <div class="wide shed" id="shed-stat" hidden><dt data-i18n="stat.shed"></dt><dd id="s-shed"></dd></div>
           </dl>
+          <div class="fuel-meters">
+            <div class="fuel-meter">
+              <div class="fuel-head"><span data-i18n="meter.co2"></span><strong id="co2-value"></strong></div>
+              <div class="hbar" id="co2-bar" role="img"></div>
+              <div class="hbar-scale"><span>0</span><span id="co2-max"></span></div>
+              <small id="co2-foot"></small>
+            </div>
+            <div class="fuel-meter">
+              <div class="fuel-head"><span data-i18n="meter.cost"></span><strong id="cost-value"></strong></div>
+              <div class="hbar" id="cost-bar" role="img"></div>
+              <div class="hbar-scale"><span>0</span><span id="cost-max"></span></div>
+              <small id="cost-foot"></small>
+            </div>
+            <ul class="fuel-legend" id="fuel-legend"></ul>
+          </div>
           <h3 data-i18n="events.heading"></h3>
           <ol class="log" id="log" aria-live="polite"></ol>
         </aside>

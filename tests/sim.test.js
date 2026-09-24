@@ -222,3 +222,21 @@ test('stats count cost and CO₂ of generation', () => {
   near(state.stats.costNTD, 600 * 1800, 1e-3);
   near(state.stats.co2Tonnes, 600 * 0.9, 1e-6);
 });
+
+test('fuel cost and CO₂ are split by fuel; intensity is CO₂ per kWh generated', () => {
+  const world = makeWorld([
+    coal(1000),
+    { type: 'gasOcgt', name: 'G', tech: 1, maxMW: 500, initialState: 'online' },
+    { type: 'oil', name: 'O', tech: 2, maxMW: 500, initialState: 'standby' },
+  ], { loadMW: 900 });
+  const state = createState(world, quiet);
+  const [c, g] = state.units.map((u) => u.outputMW);
+  near(state.fuel.cost.coal, c * 1800, 1e-6);
+  near(state.fuel.cost.gas, g * 5000, 1e-6);
+  near(state.fuel.cost.oil, 500 * 150, 1e-6); // kept warm on standby
+  near(state.fuel.co2.oil, 0);
+  near(state.co2IntensityKgPerKWh, (c * 0.9 + g * 0.55) / 900, 1e-9);
+  near(state.costNTDPerKWh, (c * 1800 + g * 5000 + 500 * 150) / 900 / 1000, 1e-9);
+  const later = run(state, world, 60);
+  near(later.stats.costByFuel.gas, g * 5000, 1);
+});

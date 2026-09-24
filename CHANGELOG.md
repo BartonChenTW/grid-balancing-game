@@ -2,6 +2,12 @@
 
 The version and release date are shown in the game's header, so you can check which version you are playing.
 
+## 0.4.0 — 2026-09-25
+
+- Side panel: live **CO₂ intensity** bar (kg/kWh, split into coal, gas and oil) with today’s average and total.
+- Side panel: live **fuel cost** bar (NT$/kWh, split into nuclear, coal, gas, oil and hydro/DSM) with the cost per hour, today’s total and how much of it went on gas and oil. Units kept warm on standby count as burning fuel.
+- End-of-day summary shows the gas and oil share of the cost.
+
 ## 0.3.0 — 2026-09-24
 
 Player feedback round 1.

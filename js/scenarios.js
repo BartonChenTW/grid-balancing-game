@@ -74,6 +74,7 @@ export function validateUnitTypes(types) {
     if (t.syncMin !== undefined && (!isNum(t.syncMin) || t.syncMin <= 0)) problems.push(`${id}.syncMin must be a positive number`);
     if (t.storage && (!isNum(t.efficiency) || t.efficiency <= 0 || t.efficiency > 1)) problems.push(`${id}.efficiency must be in (0, 1] for storage`);
     if (t.variable !== undefined && !['solar', 'wind'].includes(t.variable)) problems.push(`${id}.variable must be "solar" or "wind"`);
+    if (t.fuel !== undefined && !defaultConfig.fuels.includes(t.fuel)) problems.push(`${id}.fuel must be one of ${defaultConfig.fuels.join(', ')}`);
   }
   return problems;
 }

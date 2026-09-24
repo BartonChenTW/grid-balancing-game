@@ -326,6 +326,17 @@ legend { font-weight: 700; padding: 0 6px; }
 .key-dot { width: 14px; height: 0; border-top: 2px dotted var(--key); }
 
 .side h3 { margin: 16px 0 8px; }
+.fuel-meters { display: grid; gap: 12px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--grid); }
+.fuel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.fuel-head span { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-2); font-weight: 600; }
+.fuel-head strong { font-size: 1.1rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.hbar { display: flex; height: 12px; margin-top: 4px; border-radius: 6px; background: var(--grid); overflow: hidden; }
+.hbar-seg { height: 100%; transition: width 0.3s linear; }
+.hbar-seg + .hbar-seg { box-shadow: -2px 0 0 var(--surface); }
+.hbar-scale { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+.fuel-meter small { display: block; color: var(--text-2); font-size: 0.8rem; margin-top: 2px; }
+.fuel-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; list-style: none; margin: 0; padding: 0; font-size: 0.75rem; color: var(--text-2); }
+.fuel-legend li { display: inline-flex; align-items: center; gap: 5px; }
 .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0; }
 .stats > div { min-width: 0; }
 .stats .wide { grid-column: 1 / -1; }

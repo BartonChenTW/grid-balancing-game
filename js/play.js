@@ -359,10 +359,69 @@ export function createPlay({ cfg, onQuit, operator = null }) {
     setText($('s-reserve-hint'), t('stat.reserveHint', { up: gwText(s.reserve.upMW), down: gwText(s.reserve.downMW) }));
     setText($('s-auto'), `${s.governorMW > 0 ? '+' : ''}${formatNumber(s.governorMW)} MW`);
     setText($('s-curtailed'), mw(s.curtailedMW));
-    setText($('s-cost'), `NT$ ${formatNumber(s.stats.costNTD / 1e6)} M`);
-    setText($('s-co2'), `${formatNumber(s.stats.co2Tonnes / 1000, 1)} kt`);
+    renderFuelBars();
     $('shed-stat').hidden = s.shedStage === 0;
     setText($('s-shed'), `${s.shedStage * cfg.ufls.stagePct}%`);
+  }
+
+  // ---- CO₂ intensity and fuel cost bars ------------------------------------------
+
+  // Bar colours follow the chart (coal, gas, nuclear); oil takes the "other" red
+  // of the chart, and hydro/DSM costs are a neutral grey.
+  const FUEL_COLOR = { nuclear: '--series-nuclear', coal: '--series-coal', gas: '--series-gas', oil: '--series-other', other: '--muted' };
+  const fuelSegments = {};
+  for (const [barId, kind] of [['co2-bar', 'co2'], ['cost-bar', 'cost']]) {
+    fuelSegments[kind] = {};
+    for (const f of cfg.fuels) {
+      const seg = el('span', 'hbar-seg');
+      seg.style.background = `var(${FUEL_COLOR[f]})`;
+      $(barId).append(seg);
+      fuelSegments[kind][f] = seg;
+    }
+  }
+  $('co2-max').textContent = `${formatNumber(cfg.ui.co2BarMaxKgPerKWh, 1)} kg/kWh`;
+  $('cost-max').textContent = `NT$ ${formatNumber(cfg.ui.costBarMaxNTDPerKWh)}/kWh`;
+  $('fuel-legend').replaceChildren(
+    ...cfg.fuels.map((f) => {
+      const li = el('li');
+      const key = el('span', 'swatch');
+      key.style.setProperty('--key', `var(${FUEL_COLOR[f]})`);
+      li.append(key, document.createTextNode(t(`fuel.${f}`)));
+      return li;
+    }),
+  );
+
+  function renderFuelBars() {
+    const s = state;
+    const gen = s.generationMW;
+    // Each fuel's share of the current intensity / cost per kWh generated.
+    const describe = [];
+    for (const [kind, max, perKWh] of [
+      ['co2', cfg.ui.co2BarMaxKgPerKWh, (f) => (gen > 0 ? s.fuel.co2[f] / gen : 0)],
+      ['cost', cfg.ui.costBarMaxNTDPerKWh, (f) => (gen > 0 ? s.fuel.cost[f] / gen / 1000 : 0)],
+    ]) {
+      const parts = [];
+      for (const f of cfg.fuels) {
+        const v = perKWh(f);
+        fuelSegments[kind][f].style.width = `${Math.min(100, (v / max) * 100)}%`;
+        if (v > 0.005) parts.push(`${t(`fuel.${f}`)} ${formatNumber(v, 2)}`);
+      }
+      describe.push(parts.join(', '));
+    }
+    setText($('co2-value'), t('meter.co2Value', { v: formatNumber(s.co2IntensityKgPerKWh, 2) }));
+    setText($('cost-value'), t('meter.costValue', { v: formatNumber(s.costNTDPerKWh, 2) }));
+    $('co2-bar').setAttribute('aria-label', `${t('meter.co2')}: ${describe[0] || '0'} kg/kWh`);
+    $('cost-bar').setAttribute('aria-label', `${t('meter.cost')}: ${describe[1] || '0'} NT$/kWh`);
+
+    const st = s.stats;
+    const avgCo2 = st.generationMWh > 0 ? st.co2Tonnes / st.generationMWh : s.co2IntensityKgPerKWh;
+    setText($('co2-foot'), t('meter.co2Foot', { avg: formatNumber(avgCo2, 2), kt: formatNumber(st.co2Tonnes / 1000, 1) }));
+    const gasOil = (st.costByFuel?.gas ?? 0) + (st.costByFuel?.oil ?? 0);
+    setText($('cost-foot'), t('meter.costFoot', {
+      rate: formatNumber(s.fuel.costTotal / 1e6, 1),
+      total: formatNumber(st.costNTD / 1e6),
+      gasOil: formatNumber(gasOil / 1e6),
+    }));
   }
 
   function describeEvent(e) {
@@ -465,6 +524,7 @@ export function createPlay({ cfg, onQuit, operator = null }) {
       [t('end.shed'), formatNumber(score.shedStages)],
       [t('end.unserved'), formatEnergy(score.unservedMWh)],
       [t('end.cost'), `NT$ ${formatNumber(score.costNTD / 1e6)} M`],
+      [t('end.gasOil'), `NT$ ${formatNumber(score.gasOilCostNTD / 1e6)} M`],
       [t('end.co2'), `${formatNumber(score.co2Tonnes / 1000, 1)} kt`],
       [t('end.intensity'), `${formatNumber(score.co2Intensity, 2)} kg/kWh`],
       [t('end.re'), `${formatNumber(score.renewableSharePct, 1)}%`],

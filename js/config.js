@@ -26,6 +26,9 @@ export const config = {
     minKineticMWs: 1000,
   },
 
+  // Fuel groups for the cost and CO₂ bars (unit types name theirs in "fuel").
+  fuels: ['nuclear', 'coal', 'gas', 'oil', 'other'],
+
   // Automatic governor response ("assist"): online dispatchable units change
   // output in proportion to the frequency deviation, within their headroom.
   // Real grids use about 5% droop; a softer 20% leaves work for the player.
@@ -134,6 +137,8 @@ export const config = {
     gaugeRangeHz: [58.5, 61.5],
     forecastStepMin: 5, // resolution of forecast lines on the chart
     chartCursorStepMin: 15, // arrow keys move the chart cursor this much
+    co2BarMaxKgPerKWh: 1, // full width of the CO₂-intensity bar (coal alone is ~0.9)
+    costBarMaxNTDPerKWh: 7, // full width of the fuel-cost bar (oil alone is 6.5)
     toastMs: 9000, // how long an event banner stays up (real time)
     // Chart series, stacked bottom to top. Colours are CSS tokens --series-<id>.
     chartGroups: [

@@ -20,6 +20,7 @@ export function computeScore(state, cfg = defaultConfig) {
     shedStages: st.shedStages,
     unservedMWh: st.unservedMWh,
     costNTD: st.costNTD,
+    gasOilCostNTD: (st.costByFuel?.gas ?? 0) + (st.costByFuel?.oil ?? 0),
     co2Tonnes: st.co2Tonnes,
     co2Intensity: st.servedMWh > 0 ? st.co2Tonnes / st.servedMWh : 0, // t/MWh
     curtailedMWh: st.curtailedMWh,

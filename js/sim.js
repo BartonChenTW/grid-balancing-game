@@ -186,6 +186,31 @@ export function reserves(units, types) {
   return { upMW, downMW, ratingMW, fast };
 }
 
+/**
+ * Fuel cost (NT$ per hour) and CO₂ (tonnes per hour) right now, by fuel group.
+ * Units kept warm on standby (or warming up) burn fuel without producing.
+ */
+export function fuelRates(units, types, cfg = defaultConfig) {
+  const cost = {};
+  const co2 = {};
+  for (const f of cfg.fuels) {
+    cost[f] = 0;
+    co2[f] = 0;
+  }
+  for (const unit of units) {
+    const type = types[unit.type];
+    const f = type.fuel;
+    if (!f) continue;
+    if (unit.outputMW > 0) {
+      cost[f] += unit.outputMW * type.costPerMWh;
+      co2[f] += unit.outputMW * type.co2PerMWh;
+    }
+    if (unit.status === 'standby' || unit.status === 'warming') cost[f] += unit.maxMW * (type.standbyCostPerMWh ?? 0);
+  }
+  const sum = (o) => Object.values(o).reduce((a, b) => a + b, 0);
+  return { cost, co2, costTotal: sum(cost), co2Total: sum(co2) };
+}
+
 function derive(state, world, cfg) {
   let generationMW = 0;
   let chargingMW = 0;
@@ -200,6 +225,7 @@ function derive(state, world, cfg) {
     }
   }
   const servedLoadMW = state.demandMW * (1 - state.shedStage * (cfg.ufls.stagePct / 100));
+  const fuel = fuelRates(state.units, world.types, cfg);
   return {
     ...state,
     servedLoadMW,
@@ -207,6 +233,10 @@ function derive(state, world, cfg) {
     chargingMW,
     renewableMW,
     curtailedMW,
+    fuel,
+    // kg/kWh equals t/MWh; NT$/kWh is NT$/MWh ÷ 1000.
+    co2IntensityKgPerKWh: generationMW > 0 ? fuel.co2Total / generationMW : 0,
+    costNTDPerKWh: generationMW > 0 ? fuel.costTotal / generationMW / 1000 : 0,
     imbalanceMW: generationMW - chargingMW + state.governorMW - servedLoadMW,
     inertia: systemInertia(state.units, world.types, servedLoadMW),
     reserve: reserves(state.units, world.types),
@@ -388,6 +418,8 @@ const EMPTY_STATS = {
   generationMWh: 0,
   costNTD: 0,
   co2Tonnes: 0,
+  costByFuel: {}, // NT$ per fuel group, replaced (never mutated) each step
+  co2ByFuel: {},
   curtailedMWh: 0,
   renewableMWh: 0,
   lowMinutes: 0, // below the normal band
@@ -612,16 +644,13 @@ export function step(state, world, cfg = defaultConfig) {
   st.generationMWh += s.generationMW * hours;
   st.curtailedMWh += s.curtailedMW * hours;
   st.renewableMWh += s.renewableMW * hours;
-  for (const unit of s.units) {
-    const type = world.types[unit.type];
-    if (unit.outputMW > 0) {
-      st.costNTD += unit.outputMW * type.costPerMWh * hours;
-      st.co2Tonnes += unit.outputMW * type.co2PerMWh * hours;
-    }
-    // Keeping a unit warm (or warming it up) burns some fuel.
-    if (unit.status === 'standby' || unit.status === 'warming') {
-      st.costNTD += unit.maxMW * (type.standbyCostPerMWh ?? 0) * hours;
-    }
+  st.costNTD += s.fuel.costTotal * hours;
+  st.co2Tonnes += s.fuel.co2Total * hours;
+  st.costByFuel = { ...st.costByFuel };
+  st.co2ByFuel = { ...st.co2ByFuel };
+  for (const f of cfg.fuels) {
+    st.costByFuel[f] = (st.costByFuel[f] ?? 0) + s.fuel.cost[f] * hours;
+    st.co2ByFuel[f] = (st.co2ByFuel[f] ?? 0) + s.fuel.co2[f] * hours;
   }
 
   return derive(

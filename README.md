@@ -31,7 +31,7 @@ The game is in **English and Traditional Chinese (繁體中文)**. It follows th
 2. **Set up:** pick a fleet (Taiwan 2016, 2025, 2050, or your own mix), a day (summer or winter, weekday or weekend, Lunar New Year, typhoon) and a difficulty. Options: accidents (none, scheduled, random, or both), the assist, automatic storage and demand response, and gas peakers as automatic backup.
 3. **Operate:** follow the demand forecast. Slow plants need hours to start; fast ones, storage and demand response handle the swings. Keep frequency in the green band until midnight.
 
-At the end you get a score, the key numbers (time in band, load shedding, cost, CO₂, renewable share, curtailment) and a one-line lesson based on what happened.
+While you play, the side panel shows live CO₂ intensity and fuel cost bars, split by fuel, so you can see what burning more gas and oil does. At the end you get a score, the key numbers (time in band, load shedding, cost, CO₂, renewable share, curtailment) and a one-line lesson based on what happened.
 
 | Setup | Phone |
 |---|---|

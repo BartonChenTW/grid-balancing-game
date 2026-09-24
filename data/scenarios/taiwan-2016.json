@@ -1,0 +1,33 @@
+{
+  "id": "taiwan-2016",
+  "name": "Taiwan 2016",
+  "description": "Coal and nuclear carry the load; solar and wind are still tiny. Big, steady plants with plenty of spinning inertia.",
+  "year": 2016,
+  "peakLoadMW": 35864,
+  "dataStatus": "partial",
+  "dataNotes": "Annual peak load and installed capacity by source are official 2016 figures. Grouping into blocks, storage energy, DSM size and all unit parameters are illustrative. Biomass and waste (0.7 GW) are left out.",
+  "sources": [
+    { "what": "Peak load 2016", "url": "https://data.gov.tw/dataset/8307" },
+    { "what": "Installed capacity by source 2016", "url": "https://data.gov.tw/dataset/16480" }
+  ],
+  "units": [
+    { "type": "nuclear", "name": "Nuclear 1", "maxMW": 2572, "initialState": "online", "initialPct": 100 },
+    { "type": "nuclear", "name": "Nuclear 2", "maxMW": 2572, "initialState": "online", "initialPct": 100 },
+    { "type": "coal", "name": "Coal A", "maxMW": 6000 },
+    { "type": "coal", "name": "Coal B", "maxMW": 6000 },
+    { "type": "coal", "name": "Coal C", "maxMW": 5610 },
+    { "type": "gasCcgt", "name": "Gas CCGT A", "maxMW": 6000 },
+    { "type": "gasCcgt", "name": "Gas CCGT B", "maxMW": 5500 },
+    { "type": "gasCcgt", "name": "Gas CCGT C", "maxMW": 2668 },
+    { "type": "gasOcgt", "name": "Gas peakers", "maxMW": 1500 },
+    { "type": "oil", "name": "Oil units", "maxMW": 3830 },
+    { "type": "hydro", "name": "Hydro", "maxMW": 2089, "energyMWh": 18000, "initialState": "online", "initialPct": 10 },
+    { "type": "pumpedHydro", "name": "Pumped hydro", "maxMW": 2602, "energyMWh": 15600, "initialSocPct": 60 },
+    { "type": "dsm", "name": "Demand response", "maxMW": 500, "maxActivationMin": 240 },
+    { "type": "solar", "name": "Solar", "maxMW": 1245 },
+    { "type": "wind", "name": "Wind", "maxMW": 682 }
+  ],
+  "events": [
+    { "timeMin": 1110, "type": "trip", "unit": "Gas CCGT B", "fraction": 0.6, "note": "datan2017" }
+  ]
+}

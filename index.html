@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Follow the Load</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <header class="top">
+    <h1 data-i18n="title"></h1>
+    <div class="clock" id="clock">00:00</div>
+    <div class="speeds" id="speeds" role="group"></div>
+  </header>
+
+  <main>
+    <section class="freq" id="freq" data-band="normal">
+      <h2 class="label" data-i18n="freq.label"></h2>
+      <div class="freq-value"><span id="freq-value">60.00</span> Hz</div>
+      <div class="freq-band" id="freq-band"></div>
+    </section>
+
+    <section class="stats">
+      <div class="stat"><span class="label" data-i18n="stat.demand"></span><span class="value" id="demand"></span></div>
+      <div class="stat"><span class="label" data-i18n="stat.supply"></span><span class="value" id="supply"></span></div>
+      <div class="stat"><span class="label" data-i18n="stat.imbalance"></span><span class="value" id="imbalance"></span></div>
+      <div class="stat"><span class="label" data-i18n="stat.inertia"></span><span class="value" id="inertia"></span></div>
+    </section>
+
+    <section class="units">
+      <h2 class="label" data-i18n="units.heading"></h2>
+      <ul id="units"></ul>
+      <p class="hint" data-i18n="hint"></p>
+    </section>
+  </main>
+
+  <div class="overlay" id="overlay" hidden>
+    <div class="overlay-box" role="alertdialog" aria-labelledby="overlay-text">
+      <p id="overlay-text"></p>
+      <button type="button" id="restart" data-i18n="end.restart"></button>
+    </div>
+  </div>
+</body>
+</html>

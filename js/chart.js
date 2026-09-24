@@ -88,7 +88,7 @@ export function createChart({ canvas, freqCanvas, tooltip, legend, cfg }) {
     legend.append(legendItem('line', '--text', t('chart.demand')));
     legend.append(legendItem('dash', '--text-2', t('chart.forecast')));
     legend.append(legendItem('dot', '--muted', t('chart.netForecast')));
-    legend.append(legendItem('wash', '--series-storage', t('chart.charging')));
+    legend.append(legendItem('line', '--series-storage', t('chart.charging')));
   }
 
   function legendItem(kind, token, label) {
@@ -215,15 +215,14 @@ export function createChart({ canvas, freqCanvas, tooltip, legend, cfg }) {
         ctx.stroke();
       });
 
-      // Storage charging: a wash above the demand line.
-      ctx.beginPath();
-      for (let m = 0; m <= until; m++) ctx.lineTo(x(m), y(history.demand[m] + history.charging[m]));
-      for (let m = until; m >= 0; m--) ctx.lineTo(x(m), y(history.demand[m]));
-      ctx.closePath();
-      ctx.fillStyle = colors.series[groups.findIndex((g) => g.id === 'storage')];
-      ctx.globalAlpha = 0.3;
-      ctx.fill();
-      ctx.globalAlpha = 1;
+      // Demand plus storage charging: what supply actually has to meet.
+      let charging = false;
+      for (let m = 0; m <= until; m++) if (history.charging[m] > 0.5) { charging = true; break; }
+      if (charging) {
+        ctx.beginPath();
+        for (let m = 0; m <= until; m++) ctx.lineTo(x(m), y(history.demand[m] + history.charging[m]));
+        line(ctx, colors.series[groups.findIndex((g) => g.id === 'storage')], 2, []);
+      }
 
       // Demand line.
       ctx.beginPath();
@@ -379,7 +378,7 @@ export function createChart({ canvas, freqCanvas, tooltip, legend, cfg }) {
         const v = history.groups[gi][m];
         if (v > 0.5) rows.push(row(mw(v), t(`group.${groups[gi].id}`), `--series-${groups[gi].id}`, 'line'));
       }
-      if (history.charging[m] > 0.5) rows.push(row(mw(history.charging[m]), t('chart.charging'), '--series-storage', 'line'));
+      if (history.charging[m] > 0.5) rows.push(row(mw(history.demand[m] + history.charging[m]), t('chart.charging'), '--series-storage', 'line'));
       rows.push(row(t('chart.hz', { v: formatNumber(history.freq[m], 2) }), t('chart.freqTitle')));
     } else {
       const load = forecastLoad(world, m, cfg);

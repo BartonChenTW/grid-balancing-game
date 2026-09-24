@@ -173,3 +173,39 @@ play link and data sources, GitHub Pages deployment check, `strings.js` ready fo
 - All tunable numbers in one `config` object; no magic numbers in UI code.
 - Small commits per feature with clear messages.
 - Comment the physics simplifications so educators can see what's approximate.
+
+## 11. Status and decisions (2026-09-24)
+
+**Milestones:** M1–M5 are implemented; M6 is done except publishing (enable GitHub Pages)
+and the zh-TW translation.
+
+**Game flow (requested after M1):** three steps: 1 About (goal and lesson) → 2 Set up
+(fleet, day type, difficulty, custom mix) → 3 Operate. Planning ahead happens in the live
+game by reading the forecast lines; there is no separate day-ahead phase.
+
+**Changes to the design above:**
+- **Scenarios and days are separate.** A scenario (`data/scenarios/*.json`) is a fleet plus
+  its annual peak and scenario events. A day type (`data/days.json`: summer/winter weekday
+  and weekend, Lunar New Year, typhoon) holds the demand shape, solar and wind profiles,
+  `peakRatio` and weather events. Profiles may have any length dividing 1440.
+- **Real data:** the 2016 and 2025 annual peak loads and installed capacity by source are
+  official (via BartonChenTW/pypsa-earth `docs/data/taiwan_timeseries.csv`). Daily shapes
+  are still placeholders; live Taipower data cannot be fetched from a static page (no
+  CORS, and the site blocks non-browser clients), so real curves must be bundled.
+- **Units start offline or online by auto-commitment:** at midnight, the cheapest thermal
+  units come online until the net demand plus a 5% margin is covered, so the evening
+  still needs planning.
+- **Batteries give fast frequency response** automatically (like Taipower dReg/AFC);
+  the assist adds a softer governor on all dispatchable units.
+- **Load shedding** is restored only when spinning reserve can carry the block, which
+  prevents shed/restore cycling.
+- **Typhoon cut-out is announced** (`warnMin`) and appears in the forecast; the ramp is
+  spread over two hours.
+- **Chart:** eight technology groups (validated colour-blind-safe palette), demand line,
+  demand + storage charging line, demand and net-demand forecasts, and a separate
+  frequency strip (no dual axis).
+- **Extra files:** `js/chart.js`, `js/play.js`, `js/setup.js`, `js/tutorial.js`,
+  `js/score.js`, `data/days.json`, `tools/make-days.js`, `tools/autopilot.js`,
+  `tools/balance-report.js`. `?demo` lets the autopilot play in the browser.
+
+**Next:** zh-TW strings; real 10-minute Taipower day curves; deploy to GitHub Pages.

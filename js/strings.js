@@ -85,7 +85,7 @@ const en = {
   'chart.demand': 'Demand',
   'chart.forecast': 'Demand forecast',
   'chart.netForecast': 'Net demand forecast (after solar and wind)',
-  'chart.charging': 'Storage charging',
+  'chart.charging': 'Demand + storage charging',
   'chart.now': 'Now',
   'chart.freqTitle': 'Frequency',
   'chart.hz': '{v} Hz',

@@ -2,6 +2,8 @@
 // prints how it went. Use it when tuning data/ or js/config.js.
 // Run: `node tools/balance-report.js [difficulty]`
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { config } from '../js/config.js';
 import { createState, step } from '../js/sim.js';
 import { buildWorld, validateDays, validateScenario, validateUnitTypes } from '../js/scenarios.js';
@@ -35,7 +37,8 @@ export function playDay(world, seed = 1) {
   return { state, minHz, maxHz, score: computeScore(state, config) };
 }
 
-if (import.meta.main) {
+const isMain = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isMain) {
   const difficulty = process.argv[2] ?? 'normal';
   const { types, scenarios, days } = loadLocalData();
   console.log(`difficulty: ${difficulty}`);

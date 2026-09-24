@@ -23,7 +23,8 @@ function setText(node, text) {
 const mw = (v) => `${formatNumber(v)} MW`;
 const gwText = (v) => `${formatNumber(v / 1000, 1)} GW`;
 
-export function createPlay({ cfg, onQuit }) {
+/** operator (optional): (state, world, cfg) => state, run before every step (demo mode). */
+export function createPlay({ cfg, onQuit, operator = null }) {
   const chart = createChart({
     canvas: $('chart'),
     freqCanvas: $('freq-chart'),
@@ -438,6 +439,7 @@ export function createPlay({ cfg, onQuit }) {
     const steps = Math.floor(stepCarry);
     stepCarry -= steps;
     for (let i = 0; i < Math.min(steps, maxStepsPerFrame) && state.status === 'running'; i++) {
+      if (operator) state = operator(state, world, cfg);
       state = step(state, world, cfg);
       chart.record(state);
     }

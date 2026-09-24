@@ -40,7 +40,10 @@ async function main() {
     return;
   }
 
-  const play = createPlay({ cfg: config, onQuit: () => show('setup') });
+  // ?demo lets the scripted operator from tools/autopilot.js play, to show what good dispatch looks like.
+  const demo = new URLSearchParams(location.search).has('demo');
+  const operator = demo ? (await import('../tools/autopilot.js')).autopilot : null;
+  const play = createPlay({ cfg: config, onQuit: () => show('setup'), operator });
 
   const tutorial = createTutorial({
     steps: [
@@ -68,7 +71,7 @@ async function main() {
       ].join(' · ');
       show('play');
       play.start(world, { label });
-      if (!tutorialSeen()) tutorial.start();
+      if (!tutorialSeen() && !demo) tutorial.start();
     },
   });
 

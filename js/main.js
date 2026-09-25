@@ -2,6 +2,7 @@
 // (1 About → 2 Set up → 3 Operate) and wires the tutorial.
 import { config } from './config.js';
 import { createPlay } from './play.js';
+import { isRanked } from './replay.js';
 import { buildWorld, loadGameData } from './scenarios.js';
 import { createSetup } from './setup.js';
 import { LANGUAGES, detectLanguage, getLanguage, saveLanguage, setLanguage, t, tOr } from './strings.js';
@@ -105,7 +106,11 @@ async function main() {
       const difficultyName = t(`difficulty.${difficulty}`);
       const label = [dayName, fleetName, difficultyName].join(' · ');
       show('play');
-      play.start(world, { label, dayName, fleetName, difficultyName, discountRatePct });
+      // Ranked = a Taiwan fleet with the difficulty's default options, not in demo mode.
+      const ranked = isRanked({ scenarioId: scenario.id, difficulty, assist: world.assist, accidents: world.accidents,
+        autoStorage: world.autoStorage, autoBackup: world.autoBackup, autoFollow: world.autoFollow,
+        autoRenewables: world.autoRenewables, demo }, config);
+      play.start(world, { label, dayName, fleetName, difficultyName, discountRatePct, ranked });
       if (!tutorialSeen() && !demo) tutorial.start();
     },
   });

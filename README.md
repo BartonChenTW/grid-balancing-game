@@ -56,6 +56,10 @@ All game rules are in [js/sim.js](js/sim.js), [js/units.js](js/units.js) and [js
 
 These are deliberate simplifications for teaching: one node with no transmission limits, no voltage, no reactive power, and constants tuned for playability rather than accuracy. The code comments say where.
 
+## Leaderboard
+
+Ranked games (a Taiwan fleet with the difficulty’s default options) can post a score with a nickname. Scores show at once as “checking” and are verified by replaying the recorded moves in a GitHub Action (`tools/verify-scores.js`), using the game version they were played on. The backend is a small Cloudflare Worker with a D1 database in [leaderboard/](leaderboard/); see [leaderboard/DEPLOY.md](leaderboard/DEPLOY.md). Stored: nickname, score, settings and moves; no email and no IP addresses.
+
 ## Data sources
 
 | What | Status | Source |

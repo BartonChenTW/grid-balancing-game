@@ -1,0 +1,20 @@
+# Cloudflare Worker for the Follow the Load leaderboard. Deploy steps: DEPLOY.md.
+name = "follow-the-load-leaderboard"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+workers_dev = true
+
+# Only the game's own pages may call the leaderboard from a browser.
+[vars]
+ALLOWED_ORIGINS = "https://bartonchentw.github.io,http://localhost:8000"
+
+# Do not keep request logs (they would include IP addresses).
+[observability]
+enabled = false
+
+[[d1_databases]]
+binding = "DB"
+database_name = "follow-the-load"
+database_id = "REPLACE_WITH_ID_FROM_wrangler_d1_create"
+
+# The admin token is a secret, set with:  npx wrangler secret put ADMIN_TOKEN

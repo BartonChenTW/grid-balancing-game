@@ -158,6 +158,11 @@
             </details>
             <p class="cost-source"><a href="https://bartonchentw.github.io/pypsa-earth/" target="_blank" rel="noopener" data-i18n="cost.source"></a></p>
           </section>
+          <section class="lb setup-lb" id="setup-lb" hidden>
+            <h3 data-i18n="lb.heading"></h3>
+            <p class="lb-note" id="setup-lb-note"></p>
+            <ol class="lb-list" id="setup-lb-list"></ol>
+          </section>
           <details class="data-notes">
             <summary data-i18n="setup.data"></summary>
             <div id="data-notes"></div>
@@ -281,6 +286,20 @@
         <h3 data-i18n="end.lesson"></h3>
         <p id="end-lesson"></p>
       </div>
+      <section class="lb" id="end-lb" hidden>
+        <h3 data-i18n="lb.heading"></h3>
+        <p class="lb-note" id="end-lb-note"></p>
+        <form class="lb-form" id="end-lb-form">
+          <label for="end-lb-name" data-i18n="lb.nickname"></label>
+          <div class="lb-row">
+            <input id="end-lb-name" maxlength="20" autocomplete="nickname" required>
+            <button type="submit" class="primary" id="end-lb-submit" data-i18n="lb.submit"></button>
+          </div>
+          <small data-i18n="lb.privacy"></small>
+        </form>
+        <p class="lb-status" id="end-lb-status" role="status"></p>
+        <ol class="lb-list" id="end-lb-list"></ol>
+      </section>
       <div class="actions">
         <button type="button" id="end-report" data-i18n="end.downloadReport"></button>
         <button type="button" id="end-csv" data-i18n="end.downloadData"></button>

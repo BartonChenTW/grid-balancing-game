@@ -26,6 +26,15 @@ export const config = {
     minKineticMWs: 1000,
   },
 
+  // Leaderboard (Cloudflare Worker in leaderboard/). Empty url = leaderboard hidden.
+  leaderboard: {
+    url: '',
+    boardSize: 10, // entries on the end screen
+    previewSize: 5, // entries on the setup screen
+    timeoutMs: 8000,
+    maxMoves: 20000, // must match leaderboard/validate.js
+  },
+
   // Author and project links shown in the footer.
   about: {
     author: 'Barton Chen',

@@ -4,6 +4,11 @@
 
 The version and release date are shown in the game's header, so you can check which version you are playing.
 
+## 0.6.0 — 2026-09-25
+
+- **Leaderboard (ready, switched on after deployment).** Ranked games (a Taiwan fleet with the difficulty’s default options) can submit a nickname and score at the end of the day. Scores appear at once, marked “checking”, and are replayed move by move by a GitHub Action every 30 minutes using the exact game version they were played on; verified scores get a ✓, fakes are removed. The setup screen previews the top scores for the chosen fleet, day and difficulty and says whether your options are ranked. Backend: a Cloudflare Worker with a D1 database in `leaderboard/` (deploy steps in `leaderboard/DEPLOY.md`). Stored: nickname, score, settings and moves; no email, no IP addresses.
+- The game records your moves so a day can be replayed exactly (`js/replay.js`).
+
 ## 0.5.0 — 2026-09-25
 
 - **Download a report** when the day ends: a self-contained HTML page (setup, score and the three KPIs, key numbers, lesson, system cost, the day’s chart and frequency strip, and the control-room log) that you can open anywhere or print to PDF, plus **minute-by-minute data as CSV**. Made in your browser; nothing is uploaded.

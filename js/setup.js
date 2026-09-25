@@ -1,5 +1,7 @@
 // Step 2: choose a fleet (or build a custom mix), a day and a difficulty.
 import { capitalCost } from './economics.js';
+import { fetchTop, leaderboardEnabled, renderBoard } from './leaderboard.js';
+import { isRanked, isRankedScenario } from './replay.js';
 import { ACCIDENT_MODES, capacityByType, customScenario } from './scenarios.js';
 import { formatBigMoney, formatBigMoneyRange, formatNumber, t, tOr, unitName } from './strings.js';
 
@@ -361,6 +363,32 @@ export function createSetup({ data, cfg, onStart, onBack }) {
     $('cost-table').replaceChildren(head, ...rows);
   }
 
+  // ---- Leaderboard preview for the chosen fleet, day and difficulty ------------------
+
+  let lbTimer = null;
+  let lbKey = '';
+  function renderSetupLeaderboard(scenario) {
+    const section = $('setup-lb');
+    section.hidden = !leaderboardEnabled(cfg) || !isRankedScenario(scenario.id);
+    if (section.hidden) return;
+    const ranked = isRanked({ scenarioId: scenario.id, ...selection }, cfg);
+    $('setup-lb-note').textContent = ranked ? t('lb.previewRanked') : t('lb.previewUnranked', { difficulty: t(`difficulty.${selection.difficulty}`) });
+    const key = [scenario.id, selection.day, selection.difficulty].join('|');
+    if (key === lbKey) return;
+    lbKey = key;
+    clearTimeout(lbTimer);
+    const list = $('setup-lb-list');
+    list.replaceChildren(el('li', 'lb-empty', t('lb.loading')));
+    lbTimer = setTimeout(async () => {
+      try {
+        const scores = await fetchTop(cfg, { scenario: scenario.id, day: selection.day, difficulty: selection.difficulty }, cfg.leaderboard.previewSize);
+        if (key === lbKey) renderBoard(list, scores);
+      } catch {
+        if (key === lbKey) list.replaceChildren(el('li', 'lb-empty', t('lb.error')));
+      }
+    }, 400);
+  }
+
   function refresh() {
     refreshFleet();
     refreshDay();
@@ -376,6 +404,7 @@ export function createSetup({ data, cfg, onStart, onBack }) {
     chipButtons.forEach(([id, b]) => b.setAttribute('aria-pressed', String(selection.customBase === id)));
     renderSummary();
     renderSystemCost(currentScenario());
+    renderSetupLeaderboard(currentScenario());
     save(selection);
   }
 

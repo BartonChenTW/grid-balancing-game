@@ -2,6 +2,8 @@
 // side panel, unit cards, event log and end-of-day dialog.
 import { createChart } from './chart.js';
 import { capitalCost } from './economics.js';
+import { fetchTop, leaderboardEnabled, renderBoard, savedNickname, saveNickname, submitScore } from './leaderboard.js';
+import { ACTION_CODES } from './replay.js';
 import { reportCsv, reportHtml } from './report.js';
 import { computeScore, pickLesson } from './score.js';
 import { canTechAction, techAction, techSummary } from './fleet.js';
@@ -265,6 +267,8 @@ export function createPlay({ cfg, onQuit, operator = null }) {
 
   function act(tech, action) {
     if (state.status !== 'running') return;
+    // Record the move so the day can be replayed to check a leaderboard score.
+    if (moves.length < cfg.leaderboard.maxMoves) moves.push([state.minute, tech, ACTION_CODES.indexOf(action)]);
     state = techAction(state, world, tech, action, cfg);
   }
 
@@ -647,6 +651,7 @@ export function createPlay({ cfg, onQuit, operator = null }) {
     );
     $('end-lesson').textContent = t(lesson.key, lesson.vars);
     endReport = { score, lesson, kpiRows, rows, blackout };
+    showLeaderboard(score);
     $('end-overlay').hidden = false;
     holdBlocked = true;
     $('end-again').focus();
@@ -655,6 +660,65 @@ export function createPlay({ cfg, onQuit, operator = null }) {
   // ---- Report and data download ----------------------------------------------------------
 
   let endReport = null;
+  let initialSeed = 1;
+  let moves = [];
+
+  // ---- Leaderboard on the end screen ---------------------------------------------------
+
+  function board() {
+    return { scenario: world.scenarioId, day: world.dayId, difficulty: world.difficulty };
+  }
+
+  async function showLeaderboard(score, highlightId = null) {
+    const section = $('end-lb');
+    section.hidden = !leaderboardEnabled(cfg);
+    if (section.hidden) return;
+    const ranked = Boolean(meta.ranked) && moves.length < cfg.leaderboard.maxMoves;
+    $('end-lb-form').hidden = !ranked || highlightId !== null;
+    $('end-lb-note').textContent = ranked ? t('lb.board', { board: meta.label }) : t('lb.notRanked');
+    if (ranked && highlightId === null) {
+      $('end-lb-name').value = savedNickname();
+      $('end-lb-status').textContent = '';
+      $('end-lb-submit').disabled = false;
+    }
+    const list = $('end-lb-list');
+    if (!ranked) {
+      list.replaceChildren();
+      return;
+    }
+    list.replaceChildren(el('li', 'lb-empty', t('lb.loading')));
+    try {
+      renderBoard(list, await fetchTop(cfg, board(), cfg.leaderboard.boardSize), highlightId);
+    } catch {
+      list.replaceChildren(el('li', 'lb-empty', t('lb.error')));
+    }
+  }
+
+  $('end-lb-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!endReport) return;
+    const nickname = $('end-lb-name').value.trim();
+    if (!nickname) return;
+    saveNickname(nickname);
+    $('end-lb-submit').disabled = true;
+    $('end-lb-status').textContent = t('lb.submitting');
+    try {
+      const r = await submitScore(cfg, {
+        nickname,
+        ...board(),
+        version: VERSION,
+        seed: initialSeed,
+        moves,
+        points: endReport.score.points,
+        stars: endReport.score.stars,
+      });
+      $('end-lb-status').textContent = t('lb.submitted', { rank: r.rank });
+      await showLeaderboard(endReport.score, r.id);
+    } catch (err) {
+      $('end-lb-status').textContent = `${t('lb.error')} (${err.message})`;
+      $('end-lb-submit').disabled = false;
+    }
+  });
 
   function download(filename, content, type) {
     const url = URL.createObjectURL(new Blob([content], { type }));
@@ -823,7 +887,9 @@ export function createPlay({ cfg, onQuit, operator = null }) {
   function start(newWorld, newMeta) {
     world = newWorld;
     meta = newMeta;
-    state = createState(world, cfg, (Date.now() >>> 0) || 1);
+    initialSeed = (Date.now() >>> 0) || 1;
+    moves = [];
+    state = createState(world, cfg, initialSeed);
     speedIndex = cfg.time.defaultSpeedIndex;
     stepCarry = 0;
     rendered = null;

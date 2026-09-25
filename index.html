@@ -180,6 +180,7 @@
         <div class="freq-block" id="freq-block" data-band="normal">
           <div class="freq-top">
             <span class="freq-value"><span id="freq-value">60.00</span><small> Hz</small></span>
+            <span class="freq-imbalance" id="freq-imbalance" data-i18n-title="stat.imbalance"></span>
             <span class="freq-band" id="freq-band"></span>
           </div>
           <div class="gauge" id="gauge" role="meter" aria-valuemin="58.5" aria-valuemax="61.5" aria-valuenow="60">
@@ -217,11 +218,6 @@
           <dl class="stats">
             <div><dt data-i18n="stat.demand"></dt><dd id="s-demand"></dd><small id="s-demand-hint"></small></div>
             <div><dt data-i18n="stat.supply"></dt><dd id="s-supply"></dd></div>
-            <div class="wide"><dt data-i18n="stat.imbalance"></dt><dd id="s-imbalance"></dd></div>
-            <div id="inertia-stat"><dt data-i18n="stat.inertia"></dt><dd id="s-inertia"></dd><small id="s-inertia-hint"></small></div>
-            <div id="reserve-stat"><dt data-i18n="stat.reserve"></dt><dd id="s-reserve"></dd><small id="s-reserve-hint"></small></div>
-            <div><dt data-i18n="stat.auto"></dt><dd id="s-auto"></dd></div>
-            <div><dt data-i18n="stat.curtailed"></dt><dd id="s-curtailed"></dd></div>
             <div class="wide shed" id="shed-stat" hidden><dt data-i18n="stat.shed"></dt><dd id="s-shed"></dd></div>
           </dl>
           <div class="fuel-meters">
@@ -237,10 +233,11 @@
               <div class="hbar-scale"><span>0</span><span id="cost-max"></span></div>
               <small id="cost-foot"></small>
             </div>
-            <div class="fuel-rows">
-              <div class="fuel-rows-head"><span data-i18n="meter.bySource"></span><span data-i18n="meter.share"></span></div>
+            <details class="fuel-rows">
+              <summary data-i18n="meter.bySource"></summary>
+              <div class="fuel-rows-head"><span></span><span data-i18n="meter.share"></span></div>
               <ul class="fuel-legend" id="fuel-legend"></ul>
-            </div>
+            </details>
           </div>
           <h3 data-i18n="events.heading"></h3>
           <ol class="log" id="log" aria-live="polite"></ol>
@@ -285,6 +282,8 @@
         <p id="end-lesson"></p>
       </div>
       <div class="actions">
+        <button type="button" id="end-report" data-i18n="end.downloadReport"></button>
+        <button type="button" id="end-csv" data-i18n="end.downloadData"></button>
         <button type="button" id="end-setup" data-i18n="end.setup"></button>
         <button type="button" class="primary" id="end-again" data-i18n="end.again"></button>
       </div>

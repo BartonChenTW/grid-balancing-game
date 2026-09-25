@@ -391,6 +391,7 @@ export function createSetup({ data, cfg, onStart, onBack }) {
       autoBackup: selection.autoBackup,
       autoFollow: Boolean(selection.autoFollow),
       autoRenewables: Boolean(selection.autoRenewables),
+      discountRatePct: selection.discountRatePct,
     });
   });
 

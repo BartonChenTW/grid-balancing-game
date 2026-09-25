@@ -4,6 +4,13 @@
 
 The version and release date are shown in the game's header, so you can check which version you are playing.
 
+## 0.5.0 — 2026-09-25
+
+- **Download a report** when the day ends: a self-contained HTML page (setup, score and the three KPIs, key numbers, lesson, system cost, the day’s chart and frequency strip, and the control-room log) that you can open anywhere or print to PDF, plus **minute-by-minute data as CSV**. Made in your browser; nothing is uploaded.
+- Keyboard: ↑/↓ change the output of the selected technology; **←/→ take a unit offline or bring one online**. The keys act on the card you are in, and the changed number flashes.
+- Unit counts are clearer: Online and Standby show units actually in that state, with “+1 starting”, “−1 stopping” or “+1 warming up” shown next to them.
+- Shorter side panel: imbalance moved into the top bar next to the frequency; inertia, spinning reserve, auto response and curtailment removed from the panel; the fuel-cost breakdown by source folds open on request.
+
 ## 0.4.5 — 2026-09-25
 
 - The LinkedIn link is removed from the game and the READMEs.

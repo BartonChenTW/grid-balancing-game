@@ -492,5 +492,23 @@ export function createChart({ canvas, freqCanvas, miniCanvas = null, tooltip, le
     if (latest) draw(latest, true);
   });
 
-  return { reset, record, draw, refreshColors: readColors };
+  /** Recorded history, for the CSV export. */
+  function exportHistory() {
+    return {
+      until: history.until,
+      groupIds: groups.map((g) => g.id),
+      demand: history.demand,
+      charging: history.charging,
+      freq: history.freq,
+      series: history.groups,
+    };
+  }
+
+  /** PNG images of the chart and the frequency strip, for the report. */
+  function snapshot() {
+    if (latest) draw(latest, true);
+    return { chart: canvas.toDataURL('image/png'), freq: freqCanvas.toDataURL('image/png') };
+  }
+
+  return { reset, record, draw, refreshColors: readColors, exportHistory, snapshot };
 }

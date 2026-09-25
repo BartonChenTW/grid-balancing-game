@@ -1,10 +1,13 @@
 // Step 3: the live game. Owns the game loop and renders the top bar, chart,
 // side panel, unit cards, event log and end-of-day dialog.
 import { createChart } from './chart.js';
+import { capitalCost } from './economics.js';
+import { reportCsv, reportHtml } from './report.js';
 import { computeScore, pickLesson } from './score.js';
 import { canTechAction, techAction, techSummary } from './fleet.js';
 import { createState, step } from './sim.js';
-import { formatClock, formatDuration, formatEnergy, formatNumber, t, unitName } from './strings.js';
+import { formatBigMoneyRange, formatClock, formatDuration, formatEnergy, formatNumber, getLanguage, t, unitName } from './strings.js';
+import { RELEASE_DATE, VERSION } from './version.js';
 import { hasStandby } from './units.js';
 
 const $ = (id) => document.getElementById(id);
@@ -22,7 +25,6 @@ function setText(node, text) {
 }
 
 const mw = (v) => `${formatNumber(v)} MW`;
-const gwText = (v) => `${formatNumber(v / 1000, 1)} GW`;
 
 /** operator (optional): (state, world, cfg) => state, run before every step (demo mode). */
 export function createPlay({ cfg, onQuit, operator = null }) {
@@ -165,10 +167,13 @@ export function createPlay({ cfg, onQuit, operator = null }) {
     const box = el('div', 'count');
     const label = el('span', 'count-label', t(kindKey));
     const value = el('strong', 'count-value', '0');
+    const pending = el('span', 'count-pending');
     const minus = smallButton('−', t(`${downAction === 'onlineDown' ? 'unit.onlineMinus' : 'unit.standbyMinus'}`, { name }), () => act(tech, downAction), true);
     const plus = smallButton('+', t(`${upAction === 'onlineUp' ? 'unit.onlinePlus' : 'unit.standbyPlus'}`, { name }), () => act(tech, upAction), true);
-    box.append(label, value, minus, plus);
-    return { box, value, minus, plus };
+    const head = el('div', 'count-head');
+    head.append(label, value);
+    box.append(head, pending, minus, plus);
+    return { box, value, pending, minus, plus };
   }
 
   function buildCards() {
@@ -321,13 +326,19 @@ export function createPlay({ cfg, onQuit, operator = null }) {
     const can = (action) => live && canTechAction(state, world, tech, action);
     c.minus.disabled = !can('down');
     c.plus.disabled = !can('up');
+    // Counts show units actually in that state; units on their way are shown next to them.
     if (c.online) {
-      setText(c.online.value, String(s.online + s.starting));
+      setText(c.online.value, String(s.online));
+      const pending = [];
+      if (s.starting > 0) pending.push(t('unit.pendingStart', { n: s.starting }));
+      if (s.stopping > 0) pending.push(t('unit.pendingStop', { n: s.stopping }));
+      setText(c.online.pending, pending.join(' · '));
       c.online.minus.disabled = !can('onlineDown');
       c.online.plus.disabled = !can('onlineUp');
     }
     if (c.standby) {
-      setText(c.standby.value, String(s.standby + s.warming));
+      setText(c.standby.value, String(s.standby));
+      setText(c.standby.pending, s.warming > 0 ? t('unit.pendingWarm', { n: s.warming }) : '');
       c.standby.minus.disabled = !can('standbyDown');
       c.standby.plus.disabled = !can('standbyUp');
     }
@@ -355,14 +366,10 @@ export function createPlay({ cfg, onQuit, operator = null }) {
     setText($('s-supply'), mw(s.generationMW + s.governorMW));
     const imb = Math.round(s.imbalanceMW) || 0;
     const imbLabel = Math.abs(imb) < 1 ? t('imbalance.balanced') : imb > 0 ? t('imbalance.surplus') : t('imbalance.shortfall');
-    setText($('s-imbalance'), `${imb > 0 ? '+' : ''}${formatNumber(imb)} MW · ${imbLabel}`);
-    setText($('s-inertia'), `${formatNumber(s.inertia.hSys, 1)} s`);
-    setText($('s-inertia-hint'), t('stat.inertiaHint', { kinetic: formatNumber(s.inertia.kineticMWs / 1000) }));
-    $('inertia-stat').classList.toggle('low-inertia', s.inertia.hSys < 3);
-    setText($('s-reserve'), gwText(s.reserve.upMW));
-    setText($('s-reserve-hint'), t('stat.reserveHint', { up: gwText(s.reserve.upMW), down: gwText(s.reserve.downMW) }));
-    setText($('s-auto'), `${s.governorMW > 0 ? '+' : ''}${formatNumber(s.governorMW)} MW`);
-    setText($('s-curtailed'), mw(s.curtailedMW));
+    // Imbalance sits next to the frequency in the top bar.
+    const imbEl = $('freq-imbalance');
+    setText(imbEl, `${imb > 0 ? '+' : ''}${formatNumber(imb)} MW · ${imbLabel}`);
+    imbEl.dataset.sign = Math.abs(imb) < 1 ? '0' : imb > 0 ? '+' : '-';
     renderFuelBars();
     $('shed-stat').hidden = s.shedStage === 0;
     setText($('s-shed'), `${s.shedStage * cfg.ufls.stagePct}%`);
@@ -639,10 +646,97 @@ export function createPlay({ cfg, onQuit, operator = null }) {
       }),
     );
     $('end-lesson').textContent = t(lesson.key, lesson.vars);
+    endReport = { score, lesson, kpiRows, rows, blackout };
     $('end-overlay').hidden = false;
     holdBlocked = true;
     $('end-again').focus();
   }
+
+  // ---- Report and data download ----------------------------------------------------------
+
+  let endReport = null;
+
+  function download(filename, content, type) {
+    const url = URL.createObjectURL(new Blob([content], { type }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+
+  function fileBase() {
+    const today = new Date().toISOString().slice(0, 10);
+    return `follow-the-load-${world.scenarioId}-${world.dayId}-${today}`;
+  }
+
+  function onOff(on) {
+    return on ? t('report.on') : t('report.off');
+  }
+
+  function buildReport() {
+    const { score, lesson, kpiRows, rows, blackout } = endReport;
+    const k = score.kpis;
+    const snap = chart.snapshot();
+    const rate = (meta.discountRatePct ?? cfg.economics.discountRatePct);
+    const cost = capitalCost({ units: world.units }, world.types, rate / 100, cfg);
+    const autos = [
+      ['autoStorage', 'setup.autoStorage'], ['autoFollow', 'setup.autoFollow'],
+      ['autoRenewables', 'setup.autoRenewables'], ['autoBackup', 'setup.autoBackup'],
+    ].filter(([key]) => world[key]).map(([, label]) => t(label));
+    const outcome = blackout ? t('end.blackoutSub', { time: formatClock(state.minute) }) : t('end.finishedSub');
+    return reportHtml({
+      lang: document.documentElement.lang || getLanguage(),
+      title: t('report.title'),
+      subtitle: `${meta.label} — ${outcome}`,
+      generated: t('report.generated', { date: new Date().toLocaleString(), version: `v${VERSION} · ${RELEASE_DATE}` }),
+      playUrl: location.origin + location.pathname,
+      labels: {
+        setup: t('report.setup'), score: t('report.score'), metrics: t('report.metrics'), lesson: t('end.lesson'),
+        chart: t('chart.title'), freq: t('chart.freqTitle'), systemCost: t('cost.heading'),
+        events: t('events.heading'), noEvents: t('events.empty'),
+      },
+      setup: [
+        [t('setup.fleet'), meta.fleetName ?? ''],
+        [t('setup.day'), meta.dayName ?? ''],
+        [t('setup.difficulty'), meta.difficultyName ?? ''],
+        [t('setup.accidents'), t(`accidents.${world.accidents}`)],
+        [t('setup.assist'), onOff(world.assist)],
+        [t('report.auto'), autos.length ? autos.join(' · ') : t('report.off')],
+      ],
+      points: t('end.score', { points: formatNumber(score.points), max: formatNumber(cfg.score.maxPoints) }),
+      stars: score.stars,
+      starsLabel: t('end.stars', { n: score.stars }),
+      kpis: kpiRows.map(([id, label, value, hint]) => ({
+        label, value, hint, score: k[id].score,
+        scoreText: t('kpi.score', { score: formatNumber(k[id].score), weight: formatNumber(k[id].weight * 100) }),
+      })),
+      metrics: rows,
+      lesson: t(lesson.key, lesson.vars),
+      systemCost: {
+        total: t('cost.perYear', { money: formatBigMoneyRange(cost.annualNTD) }),
+        note: t('report.costNote', { rate: formatNumber(rate, 1) }),
+      },
+      chartPng: snap.chart,
+      freqPng: snap.freq,
+      events: state.eventLog.map((e) => {
+        const [text, note] = describeEvent(e);
+        return { time: formatClock(e.minute), text, note };
+      }),
+      dataNote: t('report.dataNote'),
+    });
+  }
+
+  $('end-report').addEventListener('click', () => {
+    if (endReport) download(`${fileBase()}-report.html`, buildReport(), 'text/html;charset=utf-8');
+  });
+  $('end-csv').addEventListener('click', () => {
+    if (!endReport) return;
+    // A UTF-8 byte-order mark helps Excel open the file with the right encoding.
+    download(`${fileBase()}-data.csv`, '\uFEFF' + reportCsv(chart.exportHistory(), formatClock), 'text/csv;charset=utf-8');
+  });
 
   $('end-again').addEventListener('click', () => {
     $('end-overlay').hidden = true;
@@ -663,6 +757,10 @@ export function createPlay({ cfg, onQuit, operator = null }) {
 
   // ---- Keyboard ------------------------------------------------------------------------
 
+  // ↑/↓ change the output of a technology's online units; ←/→ take one unit
+  // offline or bring one online (start/stop for single-unit technologies).
+  const KEY_ACTIONS = { ArrowUp: 'up', ArrowDown: 'down', ArrowRight: 'onlineUp', ArrowLeft: 'onlineDown' };
+
   document.addEventListener('keydown', (e) => {
     if (!running || holdBlocked || e.altKey || e.ctrlKey || e.metaKey) return;
     const target = e.target;
@@ -677,12 +775,28 @@ export function createPlay({ cfg, onQuit, operator = null }) {
         select(i);
         cards[i].li.scrollIntoView({ block: 'nearest' });
       }
-    } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-      if (target === $('chart')) return;
+    } else if (KEY_ACTIONS[e.key]) {
+      if (target === $('chart')) return; // the chart uses the arrows for its readout
       e.preventDefault();
-      act(selected, e.key === 'ArrowUp' ? 'up' : 'down');
+      // Act on the card the player is in (clicked or tabbed into), else the selected one.
+      const inCard = target instanceof Element ? cards.findIndex((c) => c.li.contains(target)) : -1;
+      if (inCard >= 0 && inCard !== selected) select(inCard);
+      const before = state;
+      act(selected, KEY_ACTIONS[e.key]);
+      if (state !== before) flash(selected, KEY_ACTIONS[e.key]);
+      cards[selected].li.scrollIntoView({ block: 'nearest' });
     }
   });
+
+  /** Briefly highlights the number a keyboard action changed. */
+  function flash(tech, action) {
+    const c = cards[tech];
+    const node = action === 'up' || action === 'down' ? c.outInfo : (c.online?.box ?? c.power ?? c.outNow);
+    if (!node) return;
+    node.classList.remove('flash');
+    void node.offsetWidth; // restart the animation
+    node.classList.add('flash');
+  }
 
   // ---- Loop -----------------------------------------------------------------------------
 

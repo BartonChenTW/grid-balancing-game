@@ -41,7 +41,7 @@ While you play, the side panel shows live CO₂ intensity and fuel cost bars, sp
 |---|---|
 | ![Setup screen](docs/screenshots/setup.png) | ![Playing on a phone](docs/screenshots/phone.png) |
 
-Keyboard: **Space** pauses, **1–9, 0** select a technology, **↑/↓** adjust it. On the chart, **←/→** move the readout.
+Keyboard: **Space** pauses, **1–9, 0** select a technology, **↑/↓** change its output, **←/→** take a unit offline or bring one online. On the chart, **←/→** move the readout.
 
 ## What is simulated
 

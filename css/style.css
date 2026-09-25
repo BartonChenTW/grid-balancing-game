@@ -266,9 +266,10 @@ legend { font-weight: 700; padding: 0 6px; }
 .clock { font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
 .day-label { color: var(--text-2); font-size: 0.85rem; }
 .freq-block { display: grid; gap: 6px; max-width: 560px; width: 100%; justify-self: center; }
-.freq-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.freq-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
 .freq-value { font-size: 2rem; font-weight: 700; line-height: 1; }
 .freq-value small { font-size: 1rem; color: var(--text-2); font-weight: 600; }
+.freq-imbalance { font-size: 0.85rem; font-weight: 600; color: var(--text-2); font-variant-numeric: tabular-nums; white-space: nowrap; margin-right: auto; margin-left: 12px; }
 .freq-band { font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.85rem; padding: 2px 10px; border-radius: 999px; }
 .freq-block[data-band="normal"] .freq-band { color: var(--good-ink); background: color-mix(in srgb, var(--status-good) 14%, transparent); }
 .freq-block[data-band="warning"] .freq-band { color: var(--warning-ink); background: color-mix(in srgb, var(--status-warning) 22%, transparent); }
@@ -353,6 +354,7 @@ legend { font-weight: 700; padding: 0 6px; }
 .hbar-seg + .hbar-seg { box-shadow: -2px 0 0 var(--surface); }
 .hbar-scale { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
 .fuel-meter small { display: block; color: var(--text-2); font-size: 0.8rem; margin-top: 2px; }
+.fuel-rows summary { cursor: pointer; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-2); font-weight: 600; min-height: 32px; display: flex; align-items: center; }
 .fuel-rows-head { display: flex; justify-content: space-between; gap: 8px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
 .fuel-legend { display: grid; gap: 3px; list-style: none; margin: 0; padding: 0; font-size: 0.82rem; }
 .fuel-legend li { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto 3.2em; align-items: center; gap: 6px; }
@@ -412,12 +414,16 @@ legend { font-weight: 700; padding: 0 6px; }
 .unit-buttons .auto-btn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .counts { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 6px; }
 .count {
-  display: grid; grid-template-columns: 1fr 1fr; grid-template-areas: "label value" "minus plus";
+  display: grid; grid-template-columns: 1fr 1fr; grid-template-areas: "label label" "pending pending" "minus plus";
   gap: 4px; align-items: center; padding: 6px; border: 1px solid var(--border); border-radius: var(--radius-s);
 }
-.count-label { grid-area: label; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-2); font-weight: 600; }
-.count-value { grid-area: value; justify-self: end; font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+.count-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-2); font-weight: 600; }
+.count-value { font-size: 1.1rem; font-variant-numeric: tabular-nums; }
 .count .adj { min-height: 40px; font-size: 1.2rem; }
+.count-head { grid-area: label; display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
+.count-pending { grid-area: pending; font-size: 0.72rem; color: var(--warning-ink); min-height: 1em; margin-top: -2px; }
+.flash { animation: flash 0.6s ease-out; border-radius: 4px; }
+@keyframes flash { from { background: color-mix(in srgb, var(--accent) 30%, transparent); } to { background: transparent; } }
 .count .adj:first-of-type { grid-area: minus; }
 .count .adj:last-of-type { grid-area: plus; }
 
@@ -494,6 +500,7 @@ legend { font-weight: 700; padding: 0 6px; }
   .freq-value { font-size: 1.5rem; }
   .freq-band { font-size: 0.72rem; padding: 1px 8px; }
   .mini-chart { height: 76px; }
+  .freq-imbalance { order: 3; flex-basis: 100%; margin: 0; font-size: 0.8rem; }
   #chart { height: 220px; }
   .units { grid-template-columns: 1fr; }
   .end-metrics { grid-template-columns: 1fr; }

@@ -14,6 +14,7 @@ const SCREENS = ['loading', 'error', 'intro', 'setup', 'play'];
 function applyStrings() {
   for (const node of document.querySelectorAll('[data-i18n]')) node.textContent = t(node.dataset.i18n);
   for (const node of document.querySelectorAll('[data-i18n-label]')) node.setAttribute('aria-label', t(node.dataset.i18nLabel));
+  for (const node of document.querySelectorAll('[data-i18n-title]')) node.title = t(node.dataset.i18nTitle);
   document.title = `${t('title')} — ${t('tagline')}`;
   const version = $('version');
   const number = document.createElement('span');
@@ -97,15 +98,14 @@ async function main() {
     data,
     cfg: config,
     onBack: () => show('intro'),
-    onStart: ({ scenario, day, difficulty, assist, accidents, autoStorage, autoBackup, autoFollow, autoRenewables }) => {
+    onStart: ({ scenario, day, difficulty, assist, accidents, autoStorage, autoBackup, autoFollow, autoRenewables, discountRatePct }) => {
       const world = buildWorld({ scenario, day, types: data.types, difficulty, assist, accidents, autoStorage, autoBackup, autoFollow, autoRenewables, cfg: config });
-      const label = [
-        tOr(`day.${day.id}.name`, day.name),
-        scenario.id === 'custom' ? t('fleet.custom.name') : tOr(`scenario.${scenario.id}.name`, scenario.name),
-        t(`difficulty.${difficulty}`),
-      ].join(' · ');
+      const dayName = tOr(`day.${day.id}.name`, day.name);
+      const fleetName = scenario.id === 'custom' ? t('fleet.custom.name') : tOr(`scenario.${scenario.id}.name`, scenario.name);
+      const difficultyName = t(`difficulty.${difficulty}`);
+      const label = [dayName, fleetName, difficultyName].join(' · ');
       show('play');
-      play.start(world, { label });
+      play.start(world, { label, dayName, fleetName, difficultyName, discountRatePct });
       if (!tutorialSeen() && !demo) tutorial.start();
     },
   });

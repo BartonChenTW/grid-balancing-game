@@ -1,0 +1,21 @@
+name: Feedback or idea · 意見回饋或想法
+description: Tell us what you think or suggest an improvement · 分享想法或建議改進
+labels: [feedback]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for playing! English or 中文 are both fine.
+        謝謝你玩這個遊戲！用中文或英文都可以。
+  - type: textarea
+    id: feedback
+    attributes:
+      label: Your feedback · 你的意見
+      description: What did you like, what was confusing, what would you change? · 喜歡什麼、哪裡讓你困惑、想改什麼？
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Game version · 遊戲版本
+      description: Shown in the game's header, e.g. v0.4.3 · 顯示在遊戲頁首，例如 v0.4.3

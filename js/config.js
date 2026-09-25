@@ -26,6 +26,16 @@ export const config = {
     minKineticMWs: 1000,
   },
 
+  // Author and project links shown in the footer.
+  about: {
+    author: 'Barton Chen',
+    email: 'barton.chen.energy@gmail.com',
+    linkedin: 'https://www.linkedin.com/in/bartonchen/',
+    repo: 'https://github.com/BartonChenTW/grid-balancing-game',
+    issues: 'https://github.com/BartonChenTW/grid-balancing-game/issues/new/choose',
+    model: 'https://bartonchentw.github.io/pypsa-earth/',
+  },
+
   // Fuel groups for the cost and CO₂ bars (unit types name theirs in "fuel").
   fuels: ['nuclear', 'coal', 'gas', 'oil', 'other'],
 

@@ -9,6 +9,12 @@ export const zhTW = {
   'error.title': '無法載入遊戲資料',
   'error.hint': '如果你是直接從資料夾開啟 index.html，請改為執行 `npm start`，再開啟 http://localhost:8000。',
 
+  'footer.madeBy': '作者',
+  'footer.feedback': '意見回饋或回報問題',
+  'footer.email': '電子郵件',
+  'footer.repo': 'GitHub 原始碼',
+  'footer.model': '台灣電力模型',
+  'footer.license': '免費且開放：程式碼 MIT 授權，資料與文字 CC BY 4.0。官方資料來自政府資料開放平臺。',
   'steps.label': '步驟',
   'step.1': '認識遊戲',
   'step.2': '設定電網',

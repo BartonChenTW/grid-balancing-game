@@ -24,6 +24,18 @@ function applyStrings() {
   version.title = t('version.title', { version: VERSION, date: RELEASE_DATE });
 }
 
+/** Footer: author, contact and project links (from config.about). */
+function setupFooter() {
+  const a = config.about;
+  $('footer-author').textContent = a.author;
+  $('link-issues').href = a.issues;
+  $('link-email').href = `mailto:${a.email}`;
+  $('link-email').title = a.email;
+  $('link-linkedin').href = a.linkedin;
+  $('link-repo').href = a.repo;
+  $('link-model').href = a.model;
+}
+
 function show(screen) {
   for (const name of SCREENS) $(`screen-${name}`).hidden = name !== screen;
   for (const li of document.querySelectorAll('#steps li')) {
@@ -51,6 +63,7 @@ function setupLanguage() {
 async function main() {
   setupLanguage();
   applyStrings();
+  setupFooter();
   show('loading');
 
   let data;

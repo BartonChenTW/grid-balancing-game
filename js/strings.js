@@ -11,6 +11,12 @@ const en = {
   'error.title': 'The game data could not be loaded',
   'error.hint': 'If you opened index.html directly from a folder, run `npm start` and open http://localhost:8000 instead.',
 
+  'footer.madeBy': 'Made by',
+  'footer.feedback': 'Feedback or bug report',
+  'footer.email': 'Email',
+  'footer.repo': 'Source code on GitHub',
+  'footer.model': 'Taiwan power model',
+  'footer.license': 'Free and open: code MIT, data and text CC BY 4.0. Official data from Taiwan’s open-data platform.',
   'steps.label': 'Steps',
   'step.1': 'About',
   'step.2': 'Set up',

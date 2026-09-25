@@ -1,0 +1,26 @@
+name: Bug report · 問題回報
+description: Something does not work as expected · 有功能沒有正常運作
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened? · 發生了什麼事？
+      description: What you did, what you expected, and what happened instead · 你做了什麼、預期會怎樣、實際發生什麼
+    validations:
+      required: true
+  - type: input
+    id: setup
+    attributes:
+      label: Fleet, day and difficulty · 電源組合、日期與難度
+      placeholder: e.g. Taiwan 2025 · Summer weekday · Normal · 例如 台灣 2025 · 夏季平日 · 普通
+  - type: input
+    id: version
+    attributes:
+      label: Game version · 遊戲版本
+      description: Shown in the game's header, e.g. v0.4.3 · 顯示在遊戲頁首，例如 v0.4.3
+  - type: input
+    id: device
+    attributes:
+      label: Device and browser · 裝置與瀏覽器
+      placeholder: e.g. iPhone 15, Safari · Windows, Edge

@@ -8,7 +8,7 @@ A free browser game about keeping Taiwan's island power grid at 60 Hz for one da
 
 You are the grid operator. Demand rises and falls, the sun sets, typhoons shut down wind farms, and a power station trips without warning. You dispatch coal, gas, nuclear, hydro, storage, demand response and renewables, each with realistic start-up times and ramp rates, to keep supply equal to demand.
 
-**The lesson:** grid stability comes from *flexibility*, the ability to follow the load, not from running big plants flat out.
+**The lesson:** grid stability comes from *flexibility*, the ability to follow the load.
 
 ![Operating Taiwan's 2025 grid on a summer weekday](docs/screenshots/play.png)
 

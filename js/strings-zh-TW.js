@@ -28,7 +28,7 @@ export const zhTW = {
   'intro.goal2': '注意負載預測，提早幾個小時啟動起動慢的電廠。',
   'intro.goal3': '用反應快的機組、儲能和需量反應，跟上負載的起伏。',
   'intro.lessonHeading': '核心觀念',
-  'intro.lesson': '電網穩定靠的是彈性，也就是跟著負載調整的能力，而不是讓大型電廠滿載運轉。',
+  'intro.lesson': '電網穩定靠的是彈性，也就是跟著負載調整的能力。',
   'intro.next': '下一步：設定你的電網',
 
   'setup.heading': '設定你的電網',

@@ -31,7 +31,7 @@ const en = {
   'intro.goal2': 'Watch the demand forecast and start slow power stations hours before you need them.',
   'intro.goal3': 'Use fast units, storage and demand response to follow the ups and downs.',
   'intro.lessonHeading': 'The big idea',
-  'intro.lesson': 'Stability comes from flexibility, the ability to follow the load, not from running big plants flat out.',
+  'intro.lesson': 'Stability comes from flexibility, the ability to follow the load.',
   'intro.next': 'Next: set up your grid',
 
   // ---- Step 2: setup

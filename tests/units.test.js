@@ -183,3 +183,13 @@ test('a trip disconnects the unit instantly', () => {
   assert.equal(tripped.outputMW, 0);
   assert.equal(canStart(tripped, TYPES.coal), true);
 });
+
+test('storage losses are counted: charging 100 MW for an hour at 90% loses 10 MWh', () => {
+  let unit = setUnitSetpoint(make('battery', 100, { energyMWh: 400, initialSocPct: 0 }), TYPES.battery, -100);
+  unit = tick(unit, 60);
+  near(unit.lossMWh, 10, 1e-9);
+  near(unit.socMWh + unit.lossMWh, 100, 1e-9);
+  // Discharging loses nothing more (losses are counted on charging).
+  unit = tick(setUnitSetpoint(unit, TYPES.battery, 50), 30);
+  near(unit.lossMWh, 10, 1e-9);
+});

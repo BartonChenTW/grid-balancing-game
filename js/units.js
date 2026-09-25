@@ -88,6 +88,7 @@ export function createUnit(spec, type) {
   if (type.storage) {
     unit.energyMWh = spec.energyMWh;
     unit.socMWh = spec.energyMWh * ((spec.initialSocPct ?? 50) / 100);
+    unit.lossMWh = 0; // energy lost to round-trip inefficiency so far today
   }
   if (type.energyLimited) {
     unit.energyMWh = spec.energyMWh; // daily water budget
@@ -211,6 +212,7 @@ export function updateUnit(unit, type, ctx) {
     outputMW = clamp(outputMW, (unit.socMWh - unit.energyMWh) / (eff * hours), unit.socMWh / hours);
     const storedMWh = outputMW >= 0 ? -outputMW * hours : -outputMW * eff * hours;
     next.socMWh = clamp(unit.socMWh + storedMWh, 0, unit.energyMWh);
+    if (outputMW < 0) next.lossMWh = (unit.lossMWh ?? 0) - outputMW * (1 - eff) * hours;
   }
 
   if (type.energyLimited) {

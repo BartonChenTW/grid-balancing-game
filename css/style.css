@@ -209,6 +209,7 @@ legend { font-weight: 700; padding: 0 6px; }
 .choice[aria-checked="true"] { border: 2px solid var(--accent); background: var(--accent-wash); color: var(--text); padding: 11px; }
 .badge { display: inline-block; font-size: 0.72rem; font-weight: 600; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-2); }
 .toggle { display: flex; gap: 12px; align-items: flex-start; margin-top: 14px; cursor: pointer; }
+.toggle-all { padding-bottom: 10px; border-bottom: 1px solid var(--grid); }
 .toggle input { width: 22px; height: 22px; margin-top: 2px; accent-color: var(--accent); flex: none; }
 .toggle small { display: block; color: var(--text-2); }
 .custom-base { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; color: var(--text-2); }
@@ -236,6 +237,17 @@ legend { font-weight: 700; padding: 0 6px; }
 .meter-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 0.8rem; color: var(--text-2); }
 .meter-legend span { display: inline-flex; align-items: center; gap: 6px; }
 .warning-text { color: var(--critical-ink); font-weight: 600; font-size: 0.9rem; margin-top: 8px; }
+.system-cost { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--grid); }
+.system-cost h3 { margin: 0 0 4px; }
+.cost-total { font-size: 1.35rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.cost-note { font-size: 0.8rem; color: var(--text-2); margin: 4px 0 8px; }
+.cost-rate { margin-bottom: 6px; }
+.cost-details summary { cursor: pointer; font-weight: 600; font-size: 0.85rem; min-height: 32px; }
+.cost-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; font-variant-numeric: tabular-nums; }
+.cost-table th { text-align: left; color: var(--text-2); font-weight: 600; padding: 4px 4px 4px 0; border-bottom: 1px solid var(--grid); }
+.cost-table td { padding: 4px 4px 4px 0; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+.cost-table th:not(:first-child), .cost-table td:not(:first-child) { text-align: right; }
+.cost-table td:first-child { white-space: normal; }
 .data-notes { margin-top: 12px; font-size: 0.85rem; color: var(--text-2); }
 .data-notes summary { cursor: pointer; font-weight: 600; color: var(--text); min-height: 32px; }
 .data-notes a { color: var(--accent); overflow-wrap: anywhere; }

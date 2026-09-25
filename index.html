@@ -102,6 +102,13 @@
                 <small data-i18n="setup.assistHint"></small>
               </span>
             </label>
+            <label class="toggle toggle-all">
+              <input type="checkbox" id="auto-all-toggle">
+              <span>
+                <strong data-i18n="setup.autoAll"></strong>
+                <small data-i18n="setup.autoAllHint"></small>
+              </span>
+            </label>
             <label class="toggle">
               <input type="checkbox" id="auto-storage-toggle">
               <span>
@@ -135,6 +142,20 @@
         <aside class="card setup-summary" aria-live="polite">
           <h2 data-i18n="setup.summary"></h2>
           <div id="summary"></div>
+          <section class="system-cost" id="system-cost">
+            <h3 data-i18n="cost.heading"></h3>
+            <div class="cost-total" id="cost-total"></div>
+            <p class="cost-note" id="cost-note"></p>
+            <div class="slider cost-rate">
+              <label for="discount-rate" data-i18n="cost.rate"></label>
+              <output id="discount-rate-out" for="discount-rate"></output>
+              <input type="range" id="discount-rate" step="0.5">
+            </div>
+            <details class="cost-details">
+              <summary data-i18n="cost.byTech"></summary>
+              <table class="cost-table" id="cost-table"></table>
+            </details>
+          </section>
           <details class="data-notes">
             <summary data-i18n="setup.data"></summary>
             <div id="data-notes"></div>

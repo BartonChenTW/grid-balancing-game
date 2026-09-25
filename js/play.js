@@ -190,9 +190,10 @@ export function createPlay({ cfg, onQuit, operator = null }) {
       const status = el('span', 'status');
       head.append(status);
 
-      const sub = multi
+      let sub = multi
         ? t('unit.fleet', { count: info.count, size: formatNumber(info.maxMW / info.count) })
         : t(`unitType.${info.type}`);
+      if (type.storage) sub = t('unit.storageType', { type: sub, pct: formatNumber((type.efficiency ?? 1) * 100) });
       const typeLine = el('div', 'unit-type', sub);
       const output = el('div', 'unit-output');
       const outNow = el('strong');
@@ -300,7 +301,10 @@ export function createPlay({ cfg, onQuit, operator = null }) {
     if (s.stopping > 0) parts.push(t('unit.stoppingN', { n: s.stopping }));
     if (s.lockedOut > 0) parts.push(t('unit.lockedOut'));
     if (type.variable) parts.push(t('unit.variable', { available: formatNumber(s.availableMW), curtailed: formatNumber(s.curtailedMW) }));
-    else if (type.storage) parts.push(t('unit.soc', { pct: formatNumber((s.socMWh / s.energyMWh) * 100), energy: formatEnergy(s.socMWh) }));
+    else if (type.storage) {
+      parts.push(t('unit.soc', { pct: formatNumber((s.socMWh / s.energyMWh) * 100), energy: formatEnergy(s.socMWh) }));
+      parts.push(t('unit.lost', { energy: formatEnergy(s.lossMWh) }));
+    }
     else if (type.energyLimited) parts.push(t('unit.water', { pct: formatNumber((s.budgetMWh / s.energyMWh) * 100) }));
     else if (type.activationLimited) parts.push(t('unit.dsm', { time: formatDuration(s.maxActivationMin - s.activeMin) }));
     else if (multi) {
@@ -625,6 +629,7 @@ export function createPlay({ cfg, onQuit, operator = null }) {
       [t('end.gasOil'), `NT$ ${formatNumber(score.gasOilCostNTD / 1e6)} M`],
       [t('end.re'), `${formatNumber(score.renewableSharePct, 1)}%`],
       [t('end.curtailed'), `${formatEnergy(score.curtailedMWh)} (${formatNumber(score.curtailedPct, 1)}%)`],
+      [t('end.storageLoss'), formatEnergy(score.storageLossMWh)],
     ];
     $('end-metrics').replaceChildren(
       ...rows.map(([k, v]) => {

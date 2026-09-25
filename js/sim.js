@@ -424,6 +424,7 @@ const EMPTY_STATS = {
   costByFuel: {}, // NT$ per fuel group, replaced (never mutated) each step
   co2ByFuel: {},
   curtailedMWh: 0,
+  storageLossMWh: 0, // energy lost charging storage (round-trip losses)
   renewableMWh: 0,
   lowMinutes: 0, // below the normal band
   highMinutes: 0, // above the normal band
@@ -646,6 +647,7 @@ export function step(state, world, cfg = defaultConfig) {
   st.servedMWh += s.servedLoadMW * hours;
   st.generationMWh += s.generationMW * hours;
   st.curtailedMWh += s.curtailedMW * hours;
+  st.storageLossMWh = s.units.reduce((sum, u) => sum + (u.lossMWh ?? 0), 0);
   st.renewableMWh += s.renewableMW * hours;
   st.costNTD += s.fuel.costTotal * hours;
   st.co2Tonnes += s.fuel.co2Total * hours;

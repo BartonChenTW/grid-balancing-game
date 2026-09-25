@@ -2,6 +2,12 @@
 
 The version and release date are shown in the game's header, so you can check which version you are playing.
 
+## 0.4.1 — 2026-09-25
+
+- **Overall system cost** on the setup screen: the capital cost of building the fleet, levelised over each technology’s lifetime at a discount rate (slider, default 5%), in NT$ per year, with a breakdown by technology. Works for every fleet and updates live in the custom mix. Build costs are rough, illustrative figures.
+- Storage losses are shown: storage cards show their round-trip efficiency (battery 90%, pumped hydro 75%) and the energy lost so far today; the setup summary lists each storage type’s efficiency; the end screen shows the total lost in storage.
+- “Auto for everything” switch in setup.
+
 ## 0.4.0 — 2026-09-25
 
 - **Score from three KPIs**, each 0–100: reliability (time in the normal band, minus load shedding, weight 50%), cost (NT$/kWh, weight 25%) and carbon (g CO₂/kWh, weight 25%). The end screen shows each KPI with its value and sub-score.

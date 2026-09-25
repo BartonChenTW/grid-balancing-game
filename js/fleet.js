@@ -49,6 +49,8 @@ export function techSummary(state, world, tech) {
     curtailedMW: 0,
     socMWh: 0,
     energyMWh: 0,
+    lossMWh: 0,
+    efficiency: type.efficiency ?? null,
     budgetMWh: 0,
     activeMin: 0,
     maxActivationMin: 0,
@@ -97,6 +99,7 @@ export function techSummary(state, world, tech) {
     if (type.storage) {
       s.socMWh += u.socMWh;
       s.energyMWh += u.energyMWh;
+      s.lossMWh += u.lossMWh ?? 0;
     }
     if (type.energyLimited) {
       s.budgetMWh += u.budgetMWh;

@@ -1,6 +1,7 @@
 // Step 2: choose a fleet (or build a custom mix), a day and a difficulty.
+import { capitalCost } from './economics.js';
 import { ACCIDENT_MODES, capacityByType, customScenario } from './scenarios.js';
-import { formatNumber, t, tOr, unitName } from './strings.js';
+import { formatBigMoney, formatNumber, t, tOr, unitName } from './strings.js';
 
 const STORAGE_KEY = 'ftl.setup.v1';
 
@@ -46,6 +47,7 @@ export function createSetup({ data, cfg, onStart, onBack }) {
     autoBackup: cfg.difficulties.easy.autoBackup,
     autoFollow: cfg.difficulties.easy.autoFollow,
     autoRenewables: cfg.difficulties.easy.autoRenewables,
+    discountRatePct: cfg.economics.discountRatePct,
     customBase: baseScenario.id,
     custom: capacityByType(baseScenario),
     customPeakGW: baseScenario.peakLoadMW / 1000,
@@ -130,6 +132,13 @@ export function createSetup({ data, cfg, onStart, onBack }) {
     (id) => selection.accidents === id,
     (id) => (selection.accidents = id),
   );
+
+  // One switch for every Auto option at once.
+  const AUTO_KEYS = ['autoStorage', 'autoFollow', 'autoRenewables', 'autoBackup'];
+  $('auto-all-toggle').addEventListener('change', (e) => {
+    for (const key of AUTO_KEYS) selection[key] = e.target.checked;
+    refresh();
+  });
 
   for (const [id, key] of [['auto-storage-toggle', 'autoStorage'], ['auto-follow-toggle', 'autoFollow'], ['auto-renewables-toggle', 'autoRenewables'], ['auto-backup-toggle', 'autoBackup']]) {
     $(id).addEventListener('change', (e) => {
@@ -248,7 +257,9 @@ export function createSetup({ data, cfg, onStart, onBack }) {
         const dt = el('dt');
         const sw = el('span', 'swatch');
         sw.style.setProperty('--key', `var(--series-${groupOfType[u.type] ?? 'other'})`);
-        dt.append(sw, document.createTextNode(u.name ? unitName(u.name, u.type) : t(`unitType.${u.type}`)));
+        const name = u.name ? unitName(u.name, u.type) : t(`unitType.${u.type}`);
+        const eff = types[u.type].efficiency;
+        dt.append(sw, document.createTextNode(eff ? t('setup.withEfficiency', { name, pct: formatNumber(eff * 100) }) : name));
         d.append(dt, el('dd', '', gw(u.maxMW)));
         rows.append(d);
       }
@@ -305,6 +316,41 @@ export function createSetup({ data, cfg, onStart, onBack }) {
     $('data-notes').replaceChildren(...notes);
   }
 
+  // ---- Overall system cost -----------------------------------------------------
+
+  const rateInput = $('discount-rate');
+  [rateInput.min, rateInput.max] = cfg.economics.discountRateRangePct.map(String);
+  rateInput.value = String(selection.discountRatePct);
+  rateInput.addEventListener('input', () => {
+    selection.discountRatePct = Number(rateInput.value);
+    refresh();
+  });
+
+  function renderSystemCost(scenario) {
+    const rate = selection.discountRatePct / 100;
+    const cost = capitalCost(scenario, data.types, rate);
+    $('discount-rate-out').textContent = `${formatNumber(selection.discountRatePct, 1)}%`;
+    $('cost-total').textContent = t('cost.perYear', { money: formatBigMoney(cost.annualNTD) });
+    $('cost-note').textContent = t('cost.note', {
+      overnight: formatBigMoney(cost.overnightNTD),
+      rate: formatNumber(selection.discountRatePct, 1),
+    });
+    const head = el('tr');
+    for (const key of ['cost.col.tech', 'cost.col.build', 'cost.col.life', 'cost.col.year']) head.append(el('th', '', t(key)));
+    const rows = cost.byTech.map((x) => {
+      const tr = el('tr');
+      const name = x.name ? unitName(x.name, x.type) : t(`unitType.${x.type}`);
+      tr.append(
+        el('td', '', `${name} · ${gw(x.maxMW)}`),
+        el('td', '', formatBigMoney(x.overnightNTD)),
+        el('td', '', t('cost.years', { n: x.lifeYears })),
+        el('td', '', formatBigMoney(x.annualNTD)),
+      );
+      return tr;
+    });
+    $('cost-table').replaceChildren(head, ...rows);
+  }
+
   function refresh() {
     refreshFleet();
     refreshDay();
@@ -315,9 +361,11 @@ export function createSetup({ data, cfg, onStart, onBack }) {
     $('auto-backup-toggle').checked = selection.autoBackup;
     $('auto-follow-toggle').checked = Boolean(selection.autoFollow);
     $('auto-renewables-toggle').checked = Boolean(selection.autoRenewables);
+    $('auto-all-toggle').checked = AUTO_KEYS.every((key) => selection[key]);
     $('custom-panel').hidden = selection.fleet !== 'custom';
     chipButtons.forEach(([id, b]) => b.setAttribute('aria-pressed', String(selection.customBase === id)));
     renderSummary();
+    renderSystemCost(currentScenario());
     save(selection);
   }
 

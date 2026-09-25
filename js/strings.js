@@ -30,6 +30,19 @@ const en = {
 
   // ---- Step 2: setup
   'setup.heading': 'Set up your grid',
+  'money.big': 'NT$ {v} bn',
+  'money.bigDivisor': '1000000000',
+  'cost.heading': 'Overall system cost',
+  'cost.perYear': '{money} per year',
+  'cost.note': 'The capital to build this fleet ({overnight}), levelised over each technology’s lifetime at a {rate}% discount rate. Fuel is not included: you see it while you play. Build costs are rough, illustrative figures.',
+  'cost.rate': 'Discount rate',
+  'cost.byTech': 'By technology',
+  'cost.col.tech': 'Technology',
+  'cost.col.build': 'Build cost',
+  'cost.col.life': 'Life',
+  'cost.col.year': 'Per year',
+  'cost.years': '{n} yr',
+  'setup.withEfficiency': '{name} (efficiency {pct}%)',
   'setup.fleet': 'Generation fleet',
   'setup.day': 'Which day?',
   'setup.difficulty': 'Difficulty and options',
@@ -44,7 +57,9 @@ const en = {
   'accidents.both.hint': 'Scheduled events plus random surprises.',
   'setup.autoStorage': 'Auto: storage and demand response',
   'setup.autoStorageHint': 'Batteries and pumped hydro charge and discharge by themselves; demand response steps in when supply is short. You can switch it per card.',
-  'setup.autoFollow': 'Auto: nuclear, coal and gas follow the load',
+  'setup.autoAll': 'Auto for everything',
+  'setup.autoAllHint': 'Put every technology on Auto: you only decide how many thermal units are online. You can still switch any card back to manual.',
+  'setup.autoFollow': 'Auto: nuclear, coal and gas (incl. gas/H₂) follow the load',
   'setup.autoFollowHint': 'Online nuclear, coal and combined-cycle gas units adjust their output by themselves, within their ramp limits. You still decide how many units are online or on standby.',
   'setup.autoRenewables': 'Auto: hydro, solar and wind',
   'setup.autoRenewablesHint': 'Hydro covers shortfalls while saving water for later; solar and wind run flat out and are curtailed only when there is more power than anything can use.',
@@ -181,6 +196,8 @@ const en = {
   'unit.startupTakes': 'Start-up takes {time}',
   'unit.lockedOut': 'Cannot restart today',
   'unit.stopping': 'Ramping down to shut off',
+  'unit.storageType': '{type} · storage efficiency {pct}%',
+  'unit.lost': 'lost {energy} today',
   'unit.soc': 'Charge {pct}% · {energy} left',
   'unit.water': 'Water left today {pct}%',
   'unit.dsm': 'Activation left {time}',
@@ -240,6 +257,7 @@ const en = {
   'end.stars': '{n} of 3 stars',
   'end.shed': 'Load-shedding stages',
   'end.unserved': 'Energy not delivered',
+  'end.storageLoss': 'Lost in storage (round trip)',
   'end.gasOil': 'Spent on gas and oil',
   'end.re': 'Solar and wind share',
   'end.curtailed': 'Renewables curtailed',
@@ -350,6 +368,13 @@ export function formatNumber(value, digits = 0) {
   const f = 10 ** digits;
   const rounded = Math.round(value * f) / f || 0;
   return digits ? rounded.toLocaleString('en', { minimumFractionDigits: digits, maximumFractionDigits: digits }) : numberFormat.format(rounded);
+}
+
+/** Large NT$ amounts: "NT$ 262.4 bn" in English, "NT$ 2,624 億" in Chinese. */
+export function formatBigMoney(ntd) {
+  const divisor = Number(t('money.bigDivisor'));
+  const v = ntd / divisor;
+  return t('money.big', { v: formatNumber(v, v < 100 ? 1 : 0) });
 }
 
 /** "12.3 GWh" or "850 MWh" */

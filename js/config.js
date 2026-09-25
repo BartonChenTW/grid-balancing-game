@@ -102,6 +102,12 @@ export const config = {
     hard: { assist: false, forecastErrorPct: 3, accidents: 'both', autoStorage: false, autoBackup: false, autoFollow: false, autoRenewables: false },
   },
 
+  // Overall system cost on the setup screen: capital levelised at this discount rate.
+  economics: {
+    discountRatePct: 5,
+    discountRateRangePct: [0, 10],
+  },
+
   // Custom mix: slider limits (GW) and storage hours. Unit sizes come from unit-types.json.
   custom: {
     peakRangeGW: [25, 90],

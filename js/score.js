@@ -65,6 +65,7 @@ export function computeScore(state, cfg = defaultConfig) {
     co2Tonnes: st.co2Tonnes,
     co2GPerKWh,
     curtailedMWh: st.curtailedMWh,
+    storageLossMWh: st.storageLossMWh ?? 0,
     curtailedPct: renewableAvailable > 0 ? (100 * st.curtailedMWh) / renewableAvailable : 0,
     renewableSharePct: st.generationMWh > 0 ? (100 * st.renewableMWh) / st.generationMWh : 0,
   };

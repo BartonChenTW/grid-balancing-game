@@ -2,6 +2,10 @@
 
 The version and release date are shown in the game's header, so you can check which version you are playing.
 
+## 0.4.2 — 2026-09-25
+
+- The overall system cost is now a **range** (e.g. NT$ 141–262 bn per year for Taiwan 2025, central 201) using the cost data of the Taiwan PyPSA-Earth model (https://bartonchentw.github.io/pypsa-earth/): technology-data 2030 build costs and lifetimes (2013 euros at NT$ 36.185/€), its ±30% investment uncertainty and its 5–10% discount-rate range (default 7.1%). Batteries count inverter and storage separately; wind blends onshore and offshore costs by each fleet’s offshore share.
+
 ## 0.4.1 — 2026-09-25
 
 - **Overall system cost** on the setup screen: the capital cost of building the fleet, levelised over each technology’s lifetime at a discount rate (slider, default 5%), in NT$ per year, with a breakdown by technology. Works for every fleet and updates live in the custom mix. Build costs are rough, illustrative figures.

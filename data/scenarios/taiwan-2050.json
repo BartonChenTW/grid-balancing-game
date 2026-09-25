@@ -18,7 +18,7 @@
     { "type": "battery", "name": "Batteries", "maxMW": 20000, "energyMWh": 80000, "initialSocPct": 50 },
     { "type": "dsm", "maxMW": 4000, "maxActivationMin": 300 },
     { "type": "solar", "maxMW": 60000 },
-    { "type": "wind", "maxMW": 40000 }
+    { "type": "wind", "maxMW": 40000, "offshoreShare": 0.95 }
   ],
   "events": []
 }

@@ -1,6 +1,6 @@
 {
   "name": "follow-the-load",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "private": true,
   "description": "A browser game about balancing Taiwan's power grid: follow the load.",
   "type": "module",

@@ -240,6 +240,9 @@ legend { font-weight: 700; padding: 0 6px; }
 .system-cost { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--grid); }
 .system-cost h3 { margin: 0 0 4px; }
 .cost-total { font-size: 1.35rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.cost-central { font-size: 0.85rem; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.cost-source { font-size: 0.8rem; margin: 6px 0 0; }
+.cost-source a { color: var(--accent); }
 .cost-note { font-size: 0.8rem; color: var(--text-2); margin: 4px 0 8px; }
 .cost-rate { margin-bottom: 6px; }
 .cost-details summary { cursor: pointer; font-weight: 600; font-size: 0.85rem; min-height: 32px; }

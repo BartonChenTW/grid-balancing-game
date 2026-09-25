@@ -5,7 +5,7 @@
   "year": 2025,
   "peakLoadMW": 40752,
   "dataStatus": "partial",
-  "dataNotes": "Annual peak load and installed capacity by source are official 2025 figures; battery size uses the 2025 grid-storage target. Unit counts and sizes, storage energy, DSM size and all unit parameters are illustrative. Biomass, waste and geothermal (0.8 GW) are left out.",
+  "dataNotes": "Annual peak load and installed capacity by source are official 2025 figures; battery size uses the 2025 grid-storage target. Unit counts and sizes, storage energy, DSM size and all unit parameters are illustrative. Biomass, waste and geothermal (0.8 GW) are left out. Wind is taken as about 1 GW onshore (the MOEA onshore figure) and the rest offshore.",
   "sources": [
     { "what": "Peak load 2025", "url": "https://data.gov.tw/dataset/8307" },
     { "what": "Installed capacity by source 2025", "url": "https://data.gov.tw/dataset/16480" },
@@ -21,7 +21,7 @@
     { "type": "battery", "maxMW": 1000, "energyMWh": 2000, "initialSocPct": 50 },
     { "type": "dsm", "maxMW": 1500, "maxActivationMin": 240 },
     { "type": "solar", "maxMW": 15474 },
-    { "type": "wind", "maxMW": 4517 }
+    { "type": "wind", "maxMW": 4517, "offshoreShare": 0.78 }
   ],
   "events": [
     { "timeMin": 547, "type": "trip", "unitType": "coal", "lossMW": 2600, "note": "hsinta2022" }

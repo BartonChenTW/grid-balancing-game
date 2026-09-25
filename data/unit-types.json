@@ -1,68 +1,65 @@
 {
-  "_comment": "Illustrative values tuned for gameplay, not engineering data. startupMin: cold start to warm standby (units without syncMin go straight online); syncMin: standby to online; shutdownMin in game minutes; rampPctPerMin and minStablePct in % of unit size; inertiaH in seconds; costPerMWh in NT$ (placeholder marginal cost); standbyCostPerMWh: NT$ per MW of unit size per hour kept warm; co2PerMWh in tonnes; fuel: which fuel-cost group the type counts under; autoRole: what Auto does (follow = adjust output to follow the load; backup = start units when supply is short and stand them down after; hydro = cover shortfalls, pacing the day's water; curtail = run at full output, curtailed only for a surplus nothing else can absorb; storage and demand response have their own rules); unitMW: typical unit size used by the custom mix. capexNTDPerKW (and capexNTDPerKWh for storage energy) and lifeYears give the overall system cost on the setup screen: the capital cost of building the fleet, levelised over each lifetime at a discount rate (illustrative, roughly NT$32 per US$).",
+  "_comment": "Illustrative values tuned for gameplay, not engineering data. startupMin: cold start to warm standby (units without syncMin go straight online); syncMin: standby to online; shutdownMin in game minutes; rampPctPerMin and minStablePct in % of unit size; inertiaH in seconds; costPerMWh in NT$ (placeholder marginal cost); standbyCostPerMWh: NT$ per MW of unit size per hour kept warm; co2PerMWh in tonnes; fuel: which fuel-cost group the type counts under; autoRole: what Auto does (follow = adjust output to follow the load; backup = start units when supply is short and stand them down after; hydro = cover shortfalls, pacing the day's water; curtail = run at full output, curtailed only for a surplus nothing else can absorb; storage and demand response have their own rules); unitMW: typical unit size used by the custom mix. capexEURPerKW (capexEURPerKWh and energyLifeYears for battery energy; capexOffshoreEURPerKW for offshore wind) and lifeYears are the technology-data 2030 projections (EUR, 2013 prices) used by the Taiwan PyPSA-Earth model (https://bartonchentw.github.io/pypsa-earth/, data/costs.csv; battery USD converted at 0.7532 EUR/USD); they give the overall system cost range on the setup screen.",
   "nuclear": {
-    "capexNTDPerKW": 192000, "lifeYears": 40,
-    "fuel": "nuclear", "startupMin": 2880, "shutdownMin": 60, "rampPctPerMin": 0.5, "minStablePct": 70,
-    "inertiaH": 6, "costPerMWh": 1000, "co2PerMWh": 0, "unitMW": 950,
-    "dispatchable": true, "restartable": false, "mustRun": true, "autoCapable": true, "autoRole": "follow"
+    "capexEURPerKW": 6000, "lifeYears": 45, "fuel": "nuclear", "startupMin": 2880, "shutdownMin": 60,
+    "rampPctPerMin": 0.5, "minStablePct": 70, "inertiaH": 6, "costPerMWh": 1000, "co2PerMWh": 0,
+    "unitMW": 950, "dispatchable": true, "restartable": false, "mustRun": true, "autoCapable": true,
+    "autoRole": "follow"
   },
   "coal": {
-    "capexNTDPerKW": 64000, "lifeYears": 30,
-    "fuel": "coal", "startupMin": 420, "syncMin": 60, "shutdownMin": 60, "rampPctPerMin": 1.5, "minStablePct": 40,
-    "inertiaH": 5, "costPerMWh": 1800, "standbyCostPerMWh": 150, "co2PerMWh": 0.9, "unitMW": 700,
-    "dispatchable": true, "autoCapable": true, "autoRole": "follow"
+    "capexEURPerKW": 1300, "lifeYears": 40, "fuel": "coal", "startupMin": 420, "syncMin": 60,
+    "shutdownMin": 60, "rampPctPerMin": 1.5, "minStablePct": 40, "inertiaH": 5, "costPerMWh": 1800,
+    "standbyCostPerMWh": 150, "co2PerMWh": 0.9, "unitMW": 700, "dispatchable": true, "autoCapable": true,
+    "autoRole": "follow"
   },
   "gasCcgt": {
-    "capexNTDPerKW": 32000, "lifeYears": 25,
-    "fuel": "gas", "startupMin": 90, "syncMin": 30, "shutdownMin": 30, "rampPctPerMin": 4, "minStablePct": 45,
-    "inertiaH": 4, "costPerMWh": 3200, "standbyCostPerMWh": 200, "co2PerMWh": 0.37, "unitMW": 600,
-    "dispatchable": true, "autoCapable": true, "autoRole": "follow"
+    "capexEURPerKW": 800, "lifeYears": 30, "fuel": "gas", "startupMin": 90, "syncMin": 30,
+    "shutdownMin": 30, "rampPctPerMin": 4, "minStablePct": 45, "inertiaH": 4, "costPerMWh": 3200,
+    "standbyCostPerMWh": 200, "co2PerMWh": 0.37, "unitMW": 600, "dispatchable": true, "autoCapable": true,
+    "autoRole": "follow"
   },
   "gasOcgt": {
-    "capexNTDPerKW": 22000, "lifeYears": 25,
-    "fuel": "gas", "startupMin": 10, "syncMin": 5, "shutdownMin": 10, "rampPctPerMin": 15, "minStablePct": 30,
-    "inertiaH": 3, "costPerMWh": 5000, "standbyCostPerMWh": 150, "co2PerMWh": 0.55, "unitMW": 200,
-    "dispatchable": true, "autoCapable": true, "autoRole": "backup"
+    "capexEURPerKW": 400, "lifeYears": 30, "fuel": "gas", "startupMin": 10, "syncMin": 5,
+    "shutdownMin": 10, "rampPctPerMin": 15, "minStablePct": 30, "inertiaH": 3, "costPerMWh": 5000,
+    "standbyCostPerMWh": 150, "co2PerMWh": 0.55, "unitMW": 200, "dispatchable": true, "autoCapable": true,
+    "autoRole": "backup"
   },
   "oil": {
-    "capexNTDPerKW": 25000, "lifeYears": 25,
-    "fuel": "oil", "startupMin": 20, "syncMin": 10, "shutdownMin": 15, "rampPctPerMin": 10, "minStablePct": 30,
-    "inertiaH": 3, "costPerMWh": 6500, "standbyCostPerMWh": 150, "co2PerMWh": 0.75, "unitMW": 500,
-    "dispatchable": true, "autoCapable": true, "autoRole": "backup"
+    "capexEURPerKW": 400, "lifeYears": 30, "fuel": "oil", "startupMin": 20, "syncMin": 10,
+    "shutdownMin": 15, "rampPctPerMin": 10, "minStablePct": 30, "inertiaH": 3, "costPerMWh": 6500,
+    "standbyCostPerMWh": 150, "co2PerMWh": 0.75, "unitMW": 500, "dispatchable": true, "autoCapable": true,
+    "autoRole": "backup"
   },
   "hydro": {
-    "capexNTDPerKW": 96000, "lifeYears": 50,
-    "fuel": "other", "startupMin": 5, "shutdownMin": 5, "rampPctPerMin": 50, "minStablePct": 10,
-    "inertiaH": 3, "costPerMWh": 300, "co2PerMWh": 0, "unitMW": 3000,
-    "dispatchable": true, "energyLimited": true, "autoCapable": true, "autoRole": "hydro"
+    "capexEURPerKW": 2000, "lifeYears": 80, "fuel": "other", "startupMin": 5, "shutdownMin": 5,
+    "rampPctPerMin": 50, "minStablePct": 10, "inertiaH": 3, "costPerMWh": 300, "co2PerMWh": 0,
+    "unitMW": 3000, "dispatchable": true, "energyLimited": true, "autoCapable": true, "autoRole": "hydro"
   },
   "pumpedHydro": {
-    "capexNTDPerKW": 80000, "lifeYears": 50,
-    "startupMin": 5, "shutdownMin": 5, "rampPctPerMin": 50, "minStablePct": 0,
-    "inertiaH": 3, "costPerMWh": 0, "co2PerMWh": 0, "unitMW": 10000,
+    "capexEURPerKW": 2000, "lifeYears": 80, "startupMin": 5, "shutdownMin": 5, "rampPctPerMin": 50,
+    "minStablePct": 0, "inertiaH": 3, "costPerMWh": 0, "co2PerMWh": 0, "unitMW": 10000,
     "dispatchable": true, "storage": true, "efficiency": 0.75, "autoCapable": true
   },
   "battery": {
-    "capexNTDPerKW": 6400, "capexNTDPerKWh": 8000, "lifeYears": 15,
-    "startupMin": 0, "shutdownMin": 0, "rampPctPerMin": 100, "minStablePct": 0,
-    "inertiaH": 0, "costPerMWh": 0, "co2PerMWh": 0, "unitMW": 40000,
-    "dispatchable": true, "storage": true, "efficiency": 0.9, "alwaysOnline": true, "fastResponse": true, "autoCapable": true
+    "capexEURPerKW": 309.6, "lifeYears": 20, "capexEURPerKWh": 144.6, "energyLifeYears": 15, "startupMin": 0,
+    "shutdownMin": 0, "rampPctPerMin": 100, "minStablePct": 0, "inertiaH": 0, "costPerMWh": 0,
+    "co2PerMWh": 0, "unitMW": 40000, "dispatchable": true, "storage": true, "efficiency": 0.9,
+    "alwaysOnline": true, "fastResponse": true, "autoCapable": true
   },
   "dsm": {
     "fuel": "other", "startupMin": 2, "shutdownMin": 0, "rampPctPerMin": 50, "minStablePct": 0,
-    "inertiaH": 0, "costPerMWh": 8000, "co2PerMWh": 0, "unitMW": 8000,
-    "dispatchable": true, "activationLimited": true, "autoCapable": true
+    "inertiaH": 0, "costPerMWh": 8000, "co2PerMWh": 0, "unitMW": 8000, "dispatchable": true,
+    "activationLimited": true, "autoCapable": true
   },
   "solar": {
-    "capexNTDPerKW": 26000, "lifeYears": 25,
-    "startupMin": 0, "shutdownMin": 0, "rampPctPerMin": 100, "minStablePct": 0,
-    "inertiaH": 0, "costPerMWh": 0, "co2PerMWh": 0, "unitMW": 100000,
+    "capexEURPerKW": 600, "lifeYears": 25, "startupMin": 0, "shutdownMin": 0, "rampPctPerMin": 100,
+    "minStablePct": 0, "inertiaH": 0, "costPerMWh": 0, "co2PerMWh": 0, "unitMW": 100000,
     "dispatchable": false, "variable": "solar", "alwaysOnline": true, "autoCapable": true, "autoRole": "curtail"
   },
   "wind": {
-    "capexNTDPerKW": 90000, "lifeYears": 25,
-    "startupMin": 0, "shutdownMin": 0, "rampPctPerMin": 100, "minStablePct": 0,
-    "inertiaH": 0, "costPerMWh": 0, "co2PerMWh": 0, "unitMW": 60000,
-    "dispatchable": false, "variable": "wind", "alwaysOnline": true, "autoCapable": true, "autoRole": "curtail"
+    "capexEURPerKW": 1040, "capexOffshoreEURPerKW": 1890, "lifeYears": 30, "startupMin": 0, "shutdownMin": 0,
+    "rampPctPerMin": 100, "minStablePct": 0, "inertiaH": 0, "costPerMWh": 0, "co2PerMWh": 0,
+    "unitMW": 60000, "dispatchable": false, "variable": "wind", "alwaysOnline": true, "autoCapable": true,
+    "autoRole": "curtail"
   }
 }

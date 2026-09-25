@@ -20,7 +20,7 @@
     { "type": "pumpedHydro", "maxMW": 2602, "energyMWh": 15600, "initialSocPct": 60 },
     { "type": "dsm", "maxMW": 500, "maxActivationMin": 240 },
     { "type": "solar", "maxMW": 1245 },
-    { "type": "wind", "maxMW": 682 }
+    { "type": "wind", "maxMW": 682, "offshoreShare": 0 }
   ],
   "events": [
     { "timeMin": 1110, "type": "trip", "unitType": "gasCcgt", "lossMW": 3300, "note": "datan2017" }

@@ -1,7 +1,7 @@
 // Step 2: choose a fleet (or build a custom mix), a day and a difficulty.
 import { capitalCost } from './economics.js';
 import { ACCIDENT_MODES, capacityByType, customScenario } from './scenarios.js';
-import { formatBigMoney, formatNumber, t, tOr, unitName } from './strings.js';
+import { formatBigMoney, formatBigMoneyRange, formatNumber, t, tOr, unitName } from './strings.js';
 
 const STORAGE_KEY = 'ftl.setup.v1';
 
@@ -48,6 +48,7 @@ export function createSetup({ data, cfg, onStart, onBack }) {
     autoFollow: cfg.difficulties.easy.autoFollow,
     autoRenewables: cfg.difficulties.easy.autoRenewables,
     discountRatePct: cfg.economics.discountRatePct,
+    costModel: 'pypsa-v1', // bump when the cost basis changes, to reset a saved discount rate
     customBase: baseScenario.id,
     custom: capacityByType(baseScenario),
     customPeakGW: baseScenario.peakLoadMW / 1000,
@@ -55,6 +56,11 @@ export function createSetup({ data, cfg, onStart, onBack }) {
   };
   if (selection.fleet !== 'custom' && !data.scenarios.some((s) => s.id === selection.fleet)) selection.fleet = data.scenarios[0].id;
   if (!data.days.some((d) => d.id === selection.day)) selection.day = data.days[0].id;
+  // A discount rate saved under the old cost basis is reset to the new default.
+  if (selection.costModel !== 'pypsa-v1' || !(selection.discountRatePct >= cfg.economics.discountRateRangePct[0])) {
+    selection.discountRatePct = cfg.economics.discountRatePct;
+    selection.costModel = 'pypsa-v1';
+  }
   if (!ACCIDENT_MODES.includes(selection.accidents)) selection.accidents = cfg.difficulties[selection.difficulty]?.accidents ?? 'none';
 
   // ---- Choices ------------------------------------------------------------
@@ -321,6 +327,7 @@ export function createSetup({ data, cfg, onStart, onBack }) {
   const rateInput = $('discount-rate');
   [rateInput.min, rateInput.max] = cfg.economics.discountRateRangePct.map(String);
   rateInput.value = String(selection.discountRatePct);
+  rateInput.step = '0.1';
   rateInput.addEventListener('input', () => {
     selection.discountRatePct = Number(rateInput.value);
     refresh();
@@ -328,12 +335,15 @@ export function createSetup({ data, cfg, onStart, onBack }) {
 
   function renderSystemCost(scenario) {
     const rate = selection.discountRatePct / 100;
-    const cost = capitalCost(scenario, data.types, rate);
+    const cost = capitalCost(scenario, data.types, rate, cfg);
     $('discount-rate-out').textContent = `${formatNumber(selection.discountRatePct, 1)}%`;
-    $('cost-total').textContent = t('cost.perYear', { money: formatBigMoney(cost.annualNTD) });
+    $('cost-total').textContent = t('cost.perYear', { money: formatBigMoneyRange(cost.annualNTD) });
+    $('cost-central').textContent = t('cost.central', { money: formatBigMoney(cost.annualNTD.central) });
     $('cost-note').textContent = t('cost.note', {
-      overnight: formatBigMoney(cost.overnightNTD),
+      overnight: formatBigMoneyRange(cost.overnightNTD),
       rate: formatNumber(selection.discountRatePct, 1),
+      spread: formatNumber(cfg.economics.investmentSpreadPct),
+      fx: formatNumber(cfg.economics.eurToTwd, 3),
     });
     const head = el('tr');
     for (const key of ['cost.col.tech', 'cost.col.build', 'cost.col.life', 'cost.col.year']) head.append(el('th', '', t(key)));
@@ -342,9 +352,9 @@ export function createSetup({ data, cfg, onStart, onBack }) {
       const name = x.name ? unitName(x.name, x.type) : t(`unitType.${x.type}`);
       tr.append(
         el('td', '', `${name} · ${gw(x.maxMW)}`),
-        el('td', '', formatBigMoney(x.overnightNTD)),
+        el('td', '', formatBigMoneyRange(x.overnightNTD)),
         el('td', '', t('cost.years', { n: x.lifeYears })),
-        el('td', '', formatBigMoney(x.annualNTD)),
+        el('td', '', formatBigMoneyRange(x.annualNTD)),
       );
       return tr;
     });

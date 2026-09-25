@@ -74,10 +74,10 @@ export function validateUnitTypes(types) {
     if (t.syncMin !== undefined && (!isNum(t.syncMin) || t.syncMin <= 0)) problems.push(`${id}.syncMin must be a positive number`);
     if (t.storage && (!isNum(t.efficiency) || t.efficiency <= 0 || t.efficiency > 1)) problems.push(`${id}.efficiency must be in (0, 1] for storage`);
     if (t.variable !== undefined && !['solar', 'wind'].includes(t.variable)) problems.push(`${id}.variable must be "solar" or "wind"`);
-    for (const key of ['capexNTDPerKW', 'capexNTDPerKWh']) {
+    for (const key of ['capexEURPerKW', 'capexEURPerKWh', 'capexOffshoreEURPerKW', 'capexSpreadPct']) {
       if (t[key] !== undefined && (!isNum(t[key]) || t[key] < 0)) problems.push(`${id}.${key} must be a number ≥ 0`);
     }
-    if ((t.capexNTDPerKW || t.capexNTDPerKWh) && (!isNum(t.lifeYears) || t.lifeYears <= 0)) problems.push(`${id}.lifeYears must be a positive number when it has a build cost`);
+    if ((t.capexEURPerKW || t.capexEURPerKWh) && (!isNum(t.lifeYears) || t.lifeYears <= 0)) problems.push(`${id}.lifeYears must be a positive number when it has a build cost`);
     if (t.fuel !== undefined && !defaultConfig.fuels.includes(t.fuel)) problems.push(`${id}.fuel must be one of ${defaultConfig.fuels.join(', ')}`);
   }
   return problems;
@@ -111,6 +111,7 @@ export function validateScenario(s, types) {
     if (type && singleUnitType(type) && (u.count ?? 1) !== 1) problems.push(`${at}.count must be 1 for ${u.type}`);
     if (u.initialState !== undefined && !UNIT_STATES.includes(u.initialState)) problems.push(`${at}.initialState must be one of ${UNIT_STATES.join(', ')}`);
     if (u.initialPct !== undefined && (!isNum(u.initialPct) || u.initialPct < 0 || u.initialPct > 100)) problems.push(`${at}.initialPct must be between 0 and 100`);
+    if (u.offshoreShare !== undefined && (!isNum(u.offshoreShare) || u.offshoreShare < 0 || u.offshoreShare > 1)) problems.push(`${at}.offshoreShare must be between 0 and 1`);
     if (type && (type.storage || type.energyLimited) && (!isNum(u.energyMWh) || u.energyMWh <= 0)) problems.push(`${at}.energyMWh must be a positive number for ${u.type}`);
   });
   checkEvents(problems, 'events', s.events, [...seen]);
@@ -194,6 +195,7 @@ export function customScenario(capacitiesGW, peakLoadGW, types, cfg = defaultCon
     if (tech.type === 'nuclear') Object.assign(unit, { initialState: 'online', initialPct: 100 });
     if (tech.type === 'hydro') Object.assign(unit, { initialState: 'online', initialPct: 10 });
     if (type.storage) unit.initialSocPct = 50;
+    if (tech.type === 'wind') unit.offshoreShare = cfg.economics.windOffshoreShare;
     units.push(unit);
   }
   return {

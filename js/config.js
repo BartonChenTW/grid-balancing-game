@@ -102,10 +102,15 @@ export const config = {
     hard: { assist: false, forecastErrorPct: 3, accidents: 'both', autoStorage: false, autoBackup: false, autoFollow: false, autoRenewables: false },
   },
 
-  // Overall system cost on the setup screen: capital levelised at this discount rate.
+  // Overall system cost on the setup screen: capital levelised at a discount rate,
+  // shown as a range. Follows the Taiwan PyPSA-Earth model's sandbox
+  // (pypsa_tw/sandbox/levers.py): investment ±30%, discount rate 5–10%, base 7.1%.
   economics: {
-    discountRatePct: 5,
-    discountRateRangePct: [0, 10],
+    discountRatePct: 7.1,
+    discountRateRangePct: [5, 10],
+    investmentSpreadPct: 30,
+    eurToTwd: 36.185, // Bank of Taiwan rate used by the model's dashboard (2026-09-24)
+    windOffshoreShare: 0.8, // custom mix: share of wind capacity offshore
   },
 
   // Custom mix: slider limits (GW) and storage hours. Unit sizes come from unit-types.json.

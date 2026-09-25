@@ -32,9 +32,12 @@ const en = {
   'setup.heading': 'Set up your grid',
   'money.big': 'NT$ {v} bn',
   'money.bigDivisor': '1000000000',
+  'money.bigRange': 'NT$ {lo}–{hi} bn',
+  'cost.central': 'central estimate {money}',
+  'cost.source': 'Cost data: Taiwan power model (PyPSA-Earth)',
   'cost.heading': 'Overall system cost',
   'cost.perYear': '{money} per year',
-  'cost.note': 'The capital to build this fleet ({overnight}), levelised over each technology’s lifetime at a {rate}% discount rate. Fuel is not included: you see it while you play. Build costs are rough, illustrative figures.',
+  'cost.note': 'The capital to build this fleet ({overnight}), levelised over each technology’s lifetime at a {rate}% discount rate. Build costs are the 2030 technology-data projections used by the Taiwan PyPSA-Earth model (2013 euros, NT$ {fx} per €), with its ±{spread}% investment uncertainty; wind blends onshore and offshore. Fuel is not included: you see it while you play.',
   'cost.rate': 'Discount rate',
   'cost.byTech': 'By technology',
   'cost.col.tech': 'Technology',
@@ -375,6 +378,13 @@ export function formatBigMoney(ntd) {
   const divisor = Number(t('money.bigDivisor'));
   const v = ntd / divisor;
   return t('money.big', { v: formatNumber(v, v < 100 ? 1 : 0) });
+}
+
+/** A { low, high } range of large NT$ amounts: "NT$ 150–280 bn". */
+export function formatBigMoneyRange({ low, high }) {
+  const divisor = Number(t('money.bigDivisor'));
+  const digits = high / divisor < 100 ? 1 : 0;
+  return t('money.bigRange', { lo: formatNumber(low / divisor, digits), hi: formatNumber(high / divisor, digits) });
 }
 
 /** "12.3 GWh" or "850 MWh" */

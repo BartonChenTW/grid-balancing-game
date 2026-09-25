@@ -31,7 +31,7 @@ The game is in **English and Traditional Chinese (繁體中文)**. It follows th
 2. **Set up:** pick a fleet (Taiwan 2016, 2025, 2050, or your own mix), a day (summer or winter, weekday or weekend, Lunar New Year, typhoon) and a difficulty. Options: accidents (none, scheduled, random, or both), the assist, automatic storage and demand response, and gas peakers as automatic backup.
 3. **Operate:** follow the demand forecast. Slow plants need hours to start; fast ones, storage and demand response handle the swings. Keep frequency in the green band until midnight.
 
-The setup screen also shows the fleet’s **overall system cost**: the capital cost of building it, levelised over each technology’s lifetime at a discount rate you can change, in NT$ per year (see [js/economics.js](js/economics.js); build costs are rough, illustrative figures).
+The setup screen also shows the fleet’s **overall system cost** as a range: the capital cost of building it, levelised over each technology’s lifetime at a discount rate you can change (5–10%), in NT$ per year. Build costs, lifetimes and the ±30% uncertainty come from the [Taiwan PyPSA-Earth model](https://bartonchentw.github.io/pypsa-earth/) (technology-data 2030 projections); see [js/economics.js](js/economics.js).
 
 While you play, the side panel shows live CO₂ intensity and fuel cost bars, split by fuel, so you can see what burning more gas and oil does. At the end you get a score out of 1,000 from three KPIs: **reliability** (time in the normal frequency band, minus load shedding; 50%), **cost** (NT$/kWh; 25%) and **carbon** (g CO₂/kWh; 25%), plus the key numbers (time in band, load shedding, cost, CO₂, renewable share, curtailment) and a one-line lesson based on what happened.
 

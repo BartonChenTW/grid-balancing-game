@@ -259,10 +259,13 @@ legend { font-weight: 700; padding: 0 6px; }
 .freq-block[data-band="warning"] .freq-band { color: var(--warning-ink); background: color-mix(in srgb, var(--status-warning) 22%, transparent); }
 .freq-block[data-band="critical"] .freq-band,
 .freq-block[data-band="blackout"] .freq-band { color: var(--critical-ink); background: color-mix(in srgb, var(--status-critical) 16%, transparent); }
+/* Customers cut off: show the label as critical even if frequency has recovered. */
+.freq-block[data-shed="true"] .freq-band { color: var(--critical-ink); background: color-mix(in srgb, var(--status-critical) 16%, transparent); }
 .freq-band::before { content: "●"; margin-right: 6px; }
 .freq-block[data-band="warning"] .freq-band::before { content: "▲"; }
 .freq-block[data-band="critical"] .freq-band::before,
-.freq-block[data-band="blackout"] .freq-band::before { content: "■"; }
+.freq-block[data-band="blackout"] .freq-band::before,
+.freq-block[data-shed="true"] .freq-band::before { content: "■"; }
 .gauge { position: relative; height: 12px; }
 .gauge-zones { position: absolute; inset: 0; border-radius: 6px; overflow: hidden; display: flex; }
 .gauge-zones span { height: 100%; }
@@ -335,8 +338,14 @@ legend { font-weight: 700; padding: 0 6px; }
 .hbar-seg + .hbar-seg { box-shadow: -2px 0 0 var(--surface); }
 .hbar-scale { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
 .fuel-meter small { display: block; color: var(--text-2); font-size: 0.8rem; margin-top: 2px; }
-.fuel-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; list-style: none; margin: 0; padding: 0; font-size: 0.75rem; color: var(--text-2); }
-.fuel-legend li { display: inline-flex; align-items: center; gap: 5px; }
+.fuel-rows-head { display: flex; justify-content: space-between; gap: 8px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+.fuel-legend { display: grid; gap: 3px; list-style: none; margin: 0; padding: 0; font-size: 0.82rem; }
+.fuel-legend li { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto 3.2em; align-items: center; gap: 6px; }
+.fuel-legend .swatch { width: 12px; height: 12px; border-radius: 3px; }
+.fuel-name { color: var(--text-2); overflow-wrap: anywhere; }
+.fuel-cost { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+.fuel-share { color: var(--text-2); font-variant-numeric: tabular-nums; text-align: right; }
+.fuel-legend li.idle .fuel-cost { color: var(--muted); font-weight: 400; }
 .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0; }
 .stats > div { min-width: 0; }
 .stats .wide { grid-column: 1 / -1; }
@@ -351,6 +360,7 @@ legend { font-weight: 700; padding: 0 6px; }
 .log time { color: var(--muted); font-variant-numeric: tabular-nums; }
 .log .log-note { grid-column: 2; color: var(--text-2); font-size: 0.8rem; }
 .log .empty { display: block; color: var(--muted); }
+.log-toggle { min-height: 36px; padding: 0; margin-top: 6px; font-size: 0.85rem; font-weight: 600; }
 
 .units-section { margin-top: var(--gap); }
 .units-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; margin-bottom: 10px; }
@@ -405,6 +415,14 @@ legend { font-weight: 700; padding: 0 6px; }
 .stars { font-size: 1.8rem; letter-spacing: 4px; color: var(--status-warning); }
 .stars .off { color: var(--grid); }
 .points { font-size: 1.4rem; font-weight: 700; }
+.kpis { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 10px; }
+.kpi-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.kpi-label { font-weight: 600; }
+.kpi-value { font-size: 1.15rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.kpi-bar { height: 8px; margin: 4px 0 2px; border-radius: 4px; background: var(--grid); overflow: hidden; }
+.kpi-bar span { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
+.kpi-foot { display: flex; justify-content: space-between; gap: 8px; font-size: 0.8rem; color: var(--text-2); }
+.kpi-score { white-space: nowrap; font-variant-numeric: tabular-nums; }
 .end-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; margin: 0 0 12px; }
 .end-metrics div { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px solid var(--grid); padding-bottom: 4px; }
 .end-metrics dt { color: var(--text-2); font-size: 0.9rem; }

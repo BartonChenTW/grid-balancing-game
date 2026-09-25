@@ -67,13 +67,18 @@ test('output +/− moves every online unit by one step', () => {
   assert.equal(s.units[2].setpointMW, 0); // standby unit untouched
 });
 
-test('auto can be switched on only for storage, demand response and peakers', () => {
+test('every technology can be switched to Auto and back', () => {
+  for (const type of Object.keys(TYPES).filter((k) => !k.startsWith('_'))) {
+    assert.equal(TYPES[type].autoCapable, true, `${type} should be auto-capable`);
+  }
   const world = makeWorld([
-    { type: 'coal', name: 'C', tech: 0, maxMW: 1000, initialState: 'online' },
-    { type: 'battery', name: 'B', tech: 1, maxMW: 100, energyMWh: 200 },
+    { type: 'nuclear', name: 'N', tech: 0, maxMW: 1000, initialState: 'online' },
+    { type: 'wind', name: 'W', tech: 1, maxMW: 100 },
   ], { loadMW: 600 });
-  const state = createState(world, sandbox);
-  assert.equal(canTechAction(state, world, 0, 'toggleAuto'), false);
-  assert.equal(techAction(state, world, 0, 'toggleAuto', sandbox).units[0].auto, false);
-  assert.equal(techAction(state, world, 1, 'toggleAuto', sandbox).units[1].auto, true);
+  let state = createState(world, sandbox);
+  state = techAction(state, world, 0, 'toggleAuto', sandbox);
+  state = techAction(state, world, 1, 'toggleAuto', sandbox);
+  assert.equal(state.units[0].auto, true);
+  assert.equal(state.units[1].auto, true);
+  assert.equal(techAction(state, world, 1, 'toggleAuto', sandbox).units[1].auto, false);
 });

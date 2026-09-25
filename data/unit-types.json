@@ -1,34 +1,34 @@
 {
-  "_comment": "Illustrative values tuned for gameplay, not engineering data. startupMin: cold start to warm standby (units without syncMin go straight online); syncMin: standby to online; shutdownMin in game minutes; rampPctPerMin and minStablePct in % of unit size; inertiaH in seconds; costPerMWh in NT$ (placeholder marginal cost); standbyCostPerMWh: NT$ per MW of unit size per hour kept warm; co2PerMWh in tonnes; fuel: which fuel-cost group the type counts under; unitMW: typical unit size used by the custom mix.",
+  "_comment": "Illustrative values tuned for gameplay, not engineering data. startupMin: cold start to warm standby (units without syncMin go straight online); syncMin: standby to online; shutdownMin in game minutes; rampPctPerMin and minStablePct in % of unit size; inertiaH in seconds; costPerMWh in NT$ (placeholder marginal cost); standbyCostPerMWh: NT$ per MW of unit size per hour kept warm; co2PerMWh in tonnes; fuel: which fuel-cost group the type counts under; autoRole: what Auto does (follow = adjust output to follow the load; backup = start units when supply is short and stand them down after; hydro = cover shortfalls, pacing the day's water; curtail = run at full output, curtailed only for a surplus nothing else can absorb; storage and demand response have their own rules); unitMW: typical unit size used by the custom mix.",
   "nuclear": {
     "fuel": "nuclear", "startupMin": 2880, "shutdownMin": 60, "rampPctPerMin": 0.5, "minStablePct": 70,
     "inertiaH": 6, "costPerMWh": 1000, "co2PerMWh": 0, "unitMW": 950,
-    "dispatchable": true, "restartable": false, "mustRun": true
+    "dispatchable": true, "restartable": false, "mustRun": true, "autoCapable": true, "autoRole": "follow"
   },
   "coal": {
     "fuel": "coal", "startupMin": 420, "syncMin": 60, "shutdownMin": 60, "rampPctPerMin": 1.5, "minStablePct": 40,
     "inertiaH": 5, "costPerMWh": 1800, "standbyCostPerMWh": 150, "co2PerMWh": 0.9, "unitMW": 700,
-    "dispatchable": true
+    "dispatchable": true, "autoCapable": true, "autoRole": "follow"
   },
   "gasCcgt": {
     "fuel": "gas", "startupMin": 90, "syncMin": 30, "shutdownMin": 30, "rampPctPerMin": 4, "minStablePct": 45,
     "inertiaH": 4, "costPerMWh": 3200, "standbyCostPerMWh": 200, "co2PerMWh": 0.37, "unitMW": 600,
-    "dispatchable": true
+    "dispatchable": true, "autoCapable": true, "autoRole": "follow"
   },
   "gasOcgt": {
     "fuel": "gas", "startupMin": 10, "syncMin": 5, "shutdownMin": 10, "rampPctPerMin": 15, "minStablePct": 30,
     "inertiaH": 3, "costPerMWh": 5000, "standbyCostPerMWh": 150, "co2PerMWh": 0.55, "unitMW": 200,
-    "dispatchable": true, "autoCapable": true
+    "dispatchable": true, "autoCapable": true, "autoRole": "backup"
   },
   "oil": {
     "fuel": "oil", "startupMin": 20, "syncMin": 10, "shutdownMin": 15, "rampPctPerMin": 10, "minStablePct": 30,
     "inertiaH": 3, "costPerMWh": 6500, "standbyCostPerMWh": 150, "co2PerMWh": 0.75, "unitMW": 500,
-    "dispatchable": true
+    "dispatchable": true, "autoCapable": true, "autoRole": "backup"
   },
   "hydro": {
     "fuel": "other", "startupMin": 5, "shutdownMin": 5, "rampPctPerMin": 50, "minStablePct": 10,
     "inertiaH": 3, "costPerMWh": 300, "co2PerMWh": 0, "unitMW": 3000,
-    "dispatchable": true, "energyLimited": true
+    "dispatchable": true, "energyLimited": true, "autoCapable": true, "autoRole": "hydro"
   },
   "pumpedHydro": {
     "startupMin": 5, "shutdownMin": 5, "rampPctPerMin": 50, "minStablePct": 0,
@@ -48,11 +48,11 @@
   "solar": {
     "startupMin": 0, "shutdownMin": 0, "rampPctPerMin": 100, "minStablePct": 0,
     "inertiaH": 0, "costPerMWh": 0, "co2PerMWh": 0, "unitMW": 100000,
-    "dispatchable": false, "variable": "solar", "alwaysOnline": true
+    "dispatchable": false, "variable": "solar", "alwaysOnline": true, "autoCapable": true, "autoRole": "curtail"
   },
   "wind": {
     "startupMin": 0, "shutdownMin": 0, "rampPctPerMin": 100, "minStablePct": 0,
     "inertiaH": 0, "costPerMWh": 0, "co2PerMWh": 0, "unitMW": 60000,
-    "dispatchable": false, "variable": "wind", "alwaysOnline": true
+    "dispatchable": false, "variable": "wind", "alwaysOnline": true, "autoCapable": true, "autoRole": "curtail"
   }
 }

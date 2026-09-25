@@ -110,6 +110,20 @@
               </span>
             </label>
             <label class="toggle">
+              <input type="checkbox" id="auto-follow-toggle">
+              <span>
+                <strong data-i18n="setup.autoFollow"></strong>
+                <small data-i18n="setup.autoFollowHint"></small>
+              </span>
+            </label>
+            <label class="toggle">
+              <input type="checkbox" id="auto-renewables-toggle">
+              <span>
+                <strong data-i18n="setup.autoRenewables"></strong>
+                <small data-i18n="setup.autoRenewablesHint"></small>
+              </span>
+            </label>
+            <label class="toggle">
               <input type="checkbox" id="auto-backup-toggle">
               <span>
                 <strong data-i18n="setup.autoBackup"></strong>
@@ -200,10 +214,14 @@
               <div class="hbar-scale"><span>0</span><span id="cost-max"></span></div>
               <small id="cost-foot"></small>
             </div>
-            <ul class="fuel-legend" id="fuel-legend"></ul>
+            <div class="fuel-rows">
+              <div class="fuel-rows-head"><span data-i18n="meter.bySource"></span><span data-i18n="meter.share"></span></div>
+              <ul class="fuel-legend" id="fuel-legend"></ul>
+            </div>
           </div>
           <h3 data-i18n="events.heading"></h3>
           <ol class="log" id="log" aria-live="polite"></ol>
+          <button type="button" class="link log-toggle" id="log-toggle" aria-controls="log" aria-expanded="false" hidden></button>
         </aside>
       </div>
 
@@ -226,6 +244,7 @@
         <div class="stars" id="end-stars" role="img"></div>
         <div class="points" id="end-points"></div>
       </div>
+      <ol class="kpis" id="end-kpis"></ol>
       <dl class="end-metrics" id="end-metrics"></dl>
       <div class="lesson">
         <h3 data-i18n="end.lesson"></h3>

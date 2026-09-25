@@ -4,9 +4,15 @@ The version and release date are shown in the game's header, so you can check wh
 
 ## 0.4.0 — 2026-09-25
 
-- Side panel: live **CO₂ intensity** bar (kg/kWh, split into coal, gas and oil) with today’s average and total.
+- **Score from three KPIs**, each 0–100: reliability (time in the normal band, minus load shedding, weight 50%), cost (NT$/kWh, weight 25%) and carbon (g CO₂/kWh, weight 25%). The end screen shows each KPI with its value and sub-score.
+- **Every technology can be put on Auto**: nuclear, coal and gas follow the load; gas peakers and oil are backup; hydro covers shortfalls while pacing its water; solar and wind are curtailed only when there is a surplus nothing else can absorb. New setup options for load following and for hydro, solar and wind.
+- Wind is simply “Wind” (onshore and offshore) in the 2050 fleet.
+- Side panel: live **CO₂ intensity** bar (g/kWh, split into coal, gas and oil) with today’s average and total.
 - Side panel: live **fuel cost** bar (NT$/kWh, split into nuclear, coal, gas, oil and hydro/DSM) with the cost per hour, today’s total and how much of it went on gas and oil. Units kept warm on standby count as burning fuel.
-- End-of-day summary shows the gas and oil share of the cost.
+- Under the bars, each source’s own fuel cost per kWh and share of generation right now; solar, wind and storage show NT$ 0 (no fuel).
+- End-of-day summary shows generation cost in NT$/kWh, CO₂ intensity in g/kWh and the amount spent on gas and oil.
+- The control-room log shows the newest 3 messages, with “Show all” to expand.
+- The load-shedding label is shown in red even after frequency recovers.
 
 ## 0.3.0 — 2026-09-24
 

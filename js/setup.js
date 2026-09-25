@@ -44,6 +44,8 @@ export function createSetup({ data, cfg, onStart, onBack }) {
     accidents: cfg.difficulties.easy.accidents,
     autoStorage: cfg.difficulties.easy.autoStorage,
     autoBackup: cfg.difficulties.easy.autoBackup,
+    autoFollow: cfg.difficulties.easy.autoFollow,
+    autoRenewables: cfg.difficulties.easy.autoRenewables,
     customBase: baseScenario.id,
     custom: capacityByType(baseScenario),
     customPeakGW: baseScenario.peakLoadMW / 1000,
@@ -117,7 +119,7 @@ export function createSetup({ data, cfg, onStart, onBack }) {
       // A difficulty is a preset; the options below can still be changed.
       selection.difficulty = id;
       const d = cfg.difficulties[id];
-      Object.assign(selection, { assist: d.assist, accidents: d.accidents, autoStorage: d.autoStorage, autoBackup: d.autoBackup });
+      Object.assign(selection, { assist: d.assist, accidents: d.accidents, autoStorage: d.autoStorage, autoBackup: d.autoBackup, autoFollow: d.autoFollow, autoRenewables: d.autoRenewables });
     },
   );
 
@@ -129,7 +131,7 @@ export function createSetup({ data, cfg, onStart, onBack }) {
     (id) => (selection.accidents = id),
   );
 
-  for (const [id, key] of [['auto-storage-toggle', 'autoStorage'], ['auto-backup-toggle', 'autoBackup']]) {
+  for (const [id, key] of [['auto-storage-toggle', 'autoStorage'], ['auto-follow-toggle', 'autoFollow'], ['auto-renewables-toggle', 'autoRenewables'], ['auto-backup-toggle', 'autoBackup']]) {
     $(id).addEventListener('change', (e) => {
       selection[key] = e.target.checked;
       refresh();
@@ -311,6 +313,8 @@ export function createSetup({ data, cfg, onStart, onBack }) {
     $('assist-toggle').checked = selection.assist;
     $('auto-storage-toggle').checked = selection.autoStorage;
     $('auto-backup-toggle').checked = selection.autoBackup;
+    $('auto-follow-toggle').checked = Boolean(selection.autoFollow);
+    $('auto-renewables-toggle').checked = Boolean(selection.autoRenewables);
     $('custom-panel').hidden = selection.fleet !== 'custom';
     chipButtons.forEach(([id, b]) => b.setAttribute('aria-pressed', String(selection.customBase === id)));
     renderSummary();
@@ -327,6 +331,8 @@ export function createSetup({ data, cfg, onStart, onBack }) {
       accidents: selection.accidents,
       autoStorage: selection.autoStorage,
       autoBackup: selection.autoBackup,
+      autoFollow: Boolean(selection.autoFollow),
+      autoRenewables: Boolean(selection.autoRenewables),
     });
   });
 

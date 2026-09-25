@@ -93,12 +93,13 @@ export const config = {
   auto: {
     freqGainPerHz: 0.05, // extra response per Hz of deviation, as a share of demand
     startThresholdPct: 5, // start an offline storage unit when the need exceeds this % of its size
+    hydroPaceFactor: 2, // auto hydro may run at up to this × the rate that spreads its water evenly over the rest of the day
   },
 
   difficulties: {
-    easy: { assist: true, forecastErrorPct: 0, accidents: 'none', autoStorage: true, autoBackup: true },
-    normal: { assist: false, forecastErrorPct: 0, accidents: 'scheduled', autoStorage: false, autoBackup: false },
-    hard: { assist: false, forecastErrorPct: 3, accidents: 'both', autoStorage: false, autoBackup: false },
+    easy: { assist: true, forecastErrorPct: 0, accidents: 'none', autoStorage: true, autoBackup: true, autoFollow: false, autoRenewables: false },
+    normal: { assist: false, forecastErrorPct: 0, accidents: 'scheduled', autoStorage: false, autoBackup: false, autoFollow: false, autoRenewables: false },
+    hard: { assist: false, forecastErrorPct: 3, accidents: 'both', autoStorage: false, autoBackup: false, autoFollow: false, autoRenewables: false },
   },
 
   // Custom mix: slider limits (GW) and storage hours. Unit sizes come from unit-types.json.
@@ -121,11 +122,15 @@ export const config = {
     ],
   },
 
+  // Score: three KPIs, each 0–100, weighted into up to maxPoints.
   score: {
     maxPoints: 1000,
-    warningWeight: 0.5, // a minute in the warning band earns half a point
-    shedStagePenalty: 25,
-    starThresholds: [500, 750, 900],
+    weights: { reliability: 0.5, cost: 0.25, carbon: 0.25 },
+    warningWeight: 0.5, // reliability: a minute in the warning band counts half
+    shedStagePenalty: 2.5, // reliability points lost per load-shedding stage
+    cost: { bestNTDPerKWh: 1.5, worstNTDPerKWh: 4.5 }, // 100 at best, 0 at worst
+    carbon: { bestGPerKWh: 0, worstGPerKWh: 900 },
+    starThresholds: [600, 750, 850],
   },
 
   ui: {
@@ -137,9 +142,10 @@ export const config = {
     gaugeRangeHz: [58.5, 61.5],
     forecastStepMin: 5, // resolution of forecast lines on the chart
     chartCursorStepMin: 15, // arrow keys move the chart cursor this much
-    co2BarMaxKgPerKWh: 1, // full width of the CO₂-intensity bar (coal alone is ~0.9)
+    co2BarMaxGPerKWh: 1000, // full width of the CO₂-intensity bar (coal alone is ~900 g/kWh)
     costBarMaxNTDPerKWh: 7, // full width of the fuel-cost bar (oil alone is 6.5)
     toastMs: 9000, // how long an event banner stays up (real time)
+    logCollapsedCount: 3, // the control-room log shows this many messages until expanded
     // Chart series, stacked bottom to top. Colours are CSS tokens --series-<id>.
     chartGroups: [
       { id: 'nuclear', types: ['nuclear'] },

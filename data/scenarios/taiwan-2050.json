@@ -1,7 +1,7 @@
 {
   "id": "taiwan-2050",
   "name": "Taiwan 2050",
-  "description": "Net-zero pathway: huge solar and offshore wind, big batteries and flexible demand, and few spinning machines, so frequency moves fast.",
+  "description": "Net-zero pathway: huge solar and wind (onshore and offshore), big batteries and flexible demand, and few spinning machines, so frequency moves fast.",
   "year": 2050,
   "peakLoadMW": 62000,
   "dataStatus": "placeholder",
@@ -18,7 +18,7 @@
     { "type": "battery", "name": "Batteries", "maxMW": 20000, "energyMWh": 80000, "initialSocPct": 50 },
     { "type": "dsm", "maxMW": 4000, "maxActivationMin": 300 },
     { "type": "solar", "maxMW": 60000 },
-    { "type": "wind", "name": "Offshore wind", "maxMW": 40000 }
+    { "type": "wind", "maxMW": 40000 }
   ],
   "events": []
 }

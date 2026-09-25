@@ -379,17 +379,65 @@ export function createPlay({ cfg, onQuit, operator = null }) {
       fuelSegments[kind][f] = seg;
     }
   }
-  $('co2-max').textContent = `${formatNumber(cfg.ui.co2BarMaxKgPerKWh, 1)} kg/kWh`;
+  $('co2-max').textContent = `${formatNumber(cfg.ui.co2BarMaxGPerKWh)} g/kWh`;
   $('cost-max').textContent = `NT$ ${formatNumber(cfg.ui.costBarMaxNTDPerKWh)}/kWh`;
-  $('fuel-legend').replaceChildren(
-    ...cfg.fuels.map((f) => {
+  // One row per source in this fleet: its own fuel cost per kWh right now and
+  // its share of generation. Solar, wind and storage burn no fuel (NT$ 0).
+  // The rows double as the colour legend for both bars.
+  let fuelRows = [];
+
+  function buildFuelRows() {
+    const fleetTypes = [...new Set(world.units.map((u) => u.type))].map((type) => world.types[type]);
+    const rows = [];
+    for (const f of cfg.fuels) {
+      const typesOfFuel = fleetTypes.filter((type) => type.fuel === f);
+      if (typesOfFuel.length === 0) continue;
+      // Listed cost of the cheapest type, shown while this fuel is idle.
+      const nominal = Math.min(...typesOfFuel.map((type) => type.costPerMWh)) / 1000;
+      rows.push({ id: f, label: t(`fuel.${f}`), color: `var(${FUEL_COLOR[f]})`, nominal });
+    }
+    if (fleetTypes.some((type) => type.variable)) {
+      rows.push({ id: 'renewable', label: t('fuel.renewable'), color: 'linear-gradient(90deg, var(--series-solar) 50%, var(--series-wind) 50%)', free: true });
+    }
+    if (fleetTypes.some((type) => type.storage)) {
+      rows.push({ id: 'storage', label: t('fuel.storage'), color: 'var(--series-storage)', free: true });
+    }
+    fuelRows = rows.map((row) => {
       const li = el('li');
       const key = el('span', 'swatch');
-      key.style.setProperty('--key', `var(${FUEL_COLOR[f]})`);
-      li.append(key, document.createTextNode(t(`fuel.${f}`)));
-      return li;
-    }),
-  );
+      key.style.background = row.color;
+      const value = el('span', 'fuel-cost');
+      const share = el('span', 'fuel-share');
+      li.append(key, el('span', 'fuel-name', row.label), value, share);
+      return { ...row, li, value, share };
+    });
+    $('fuel-legend').replaceChildren(...fuelRows.map((r) => r.li));
+  }
+
+  function renderFuelRows() {
+    const s = state;
+    const total = s.generationMW;
+    let storageMW = 0;
+    for (const u of s.units) if (world.types[u.type].storage && u.outputMW > 0) storageMW += u.outputMW;
+    for (const row of fuelRows) {
+      let mw;
+      let perKWh;
+      if (row.id === 'renewable') {
+        mw = s.renewableMW;
+        perKWh = 0;
+      } else if (row.id === 'storage') {
+        mw = storageMW;
+        perKWh = 0;
+      } else {
+        mw = s.fuel.gen[row.id];
+        perKWh = mw > 0.5 ? s.fuel.cost[row.id] / mw / 1000 : row.nominal;
+      }
+      const idle = mw <= 0.5;
+      row.li.classList.toggle('idle', idle && !row.free);
+      setText(row.value, t(row.free ? 'fuel.free' : 'fuel.costPerKWh', { v: formatNumber(perKWh, 2) }));
+      setText(row.share, total > 0 && !idle ? `${formatNumber((100 * mw) / total)}%` : '–');
+    }
+  }
 
   function renderFuelBars() {
     const s = state;
@@ -397,25 +445,26 @@ export function createPlay({ cfg, onQuit, operator = null }) {
     // Each fuel's share of the current intensity / cost per kWh generated.
     const describe = [];
     for (const [kind, max, perKWh] of [
-      ['co2', cfg.ui.co2BarMaxKgPerKWh, (f) => (gen > 0 ? s.fuel.co2[f] / gen : 0)],
+      ['co2', cfg.ui.co2BarMaxGPerKWh, (f) => (gen > 0 ? (s.fuel.co2[f] / gen) * 1000 : 0)],
       ['cost', cfg.ui.costBarMaxNTDPerKWh, (f) => (gen > 0 ? s.fuel.cost[f] / gen / 1000 : 0)],
     ]) {
       const parts = [];
       for (const f of cfg.fuels) {
         const v = perKWh(f);
         fuelSegments[kind][f].style.width = `${Math.min(100, (v / max) * 100)}%`;
-        if (v > 0.005) parts.push(`${t(`fuel.${f}`)} ${formatNumber(v, 2)}`);
+        if (v > 0.005) parts.push(`${t(`fuel.${f}`)} ${formatNumber(v, kind === 'co2' ? 0 : 2)}`);
       }
       describe.push(parts.join(', '));
     }
-    setText($('co2-value'), t('meter.co2Value', { v: formatNumber(s.co2IntensityKgPerKWh, 2) }));
+    renderFuelRows();
+    setText($('co2-value'), t('meter.co2Value', { v: formatNumber(s.co2IntensityKgPerKWh * 1000) }));
     setText($('cost-value'), t('meter.costValue', { v: formatNumber(s.costNTDPerKWh, 2) }));
-    $('co2-bar').setAttribute('aria-label', `${t('meter.co2')}: ${describe[0] || '0'} kg/kWh`);
+    $('co2-bar').setAttribute('aria-label', `${t('meter.co2')}: ${describe[0] || '0'} g/kWh`);
     $('cost-bar').setAttribute('aria-label', `${t('meter.cost')}: ${describe[1] || '0'} NT$/kWh`);
 
     const st = s.stats;
     const avgCo2 = st.generationMWh > 0 ? st.co2Tonnes / st.generationMWh : s.co2IntensityKgPerKWh;
-    setText($('co2-foot'), t('meter.co2Foot', { avg: formatNumber(avgCo2, 2), kt: formatNumber(st.co2Tonnes / 1000, 1) }));
+    setText($('co2-foot'), t('meter.co2Foot', { avg: formatNumber(avgCo2 * 1000), kt: formatNumber(st.co2Tonnes / 1000, 1) }));
     const gasOil = (st.costByFuel?.gas ?? 0) + (st.costByFuel?.oil ?? 0);
     setText($('cost-foot'), t('meter.costFoot', {
       rate: formatNumber(s.fuel.costTotal / 1e6, 1),
@@ -463,11 +512,33 @@ export function createPlay({ cfg, onQuit, operator = null }) {
       if (e.type !== 'restore') showToast(text, note);
     }
     logCount = log.length;
+    updateLogToggle();
   }
 
   function clearLog() {
     logCount = 0;
+    logExpanded = false;
     $('log').replaceChildren(el('li', 'empty', t('events.empty')));
+    updateLogToggle();
+  }
+
+  // Only the newest few messages show until the player expands the log,
+  // so a busy day does not push the power-station cards far down.
+  let logExpanded = false;
+  $('log-toggle').addEventListener('click', () => {
+    logExpanded = !logExpanded;
+    updateLogToggle();
+  });
+
+  function updateLogToggle() {
+    const button = $('log-toggle');
+    const hiddenCount = logCount - cfg.ui.logCollapsedCount;
+    [...$('log').children].forEach((li, i) => {
+      li.hidden = !logExpanded && i >= cfg.ui.logCollapsedCount;
+    });
+    button.hidden = hiddenCount <= 0;
+    button.setAttribute('aria-expanded', String(logExpanded));
+    setText(button, logExpanded ? t('events.less') : t('events.more', { n: logCount }));
   }
 
   function showToast(text, note) {
@@ -485,6 +556,7 @@ export function createPlay({ cfg, onQuit, operator = null }) {
     const s = state;
     setText($('clock'), formatClock(Math.min(s.minute, cfg.time.dayMinutes)));
     $('freq-block').dataset.band = s.band;
+    $('freq-block').dataset.shed = String(s.shedStage > 0 && s.band !== 'blackout');
     setText($('freq-value'), formatNumber(s.frequencyHz, 2));
     setText($('freq-band'), s.shedStage > 0 && s.band !== 'blackout' ? t('band.shedding') : t(`band.${s.band}`));
     const [lo, hi] = cfg.ui.gaugeRangeHz;
@@ -518,15 +590,39 @@ export function createPlay({ cfg, onQuit, operator = null }) {
       ...[0, 1, 2].map((i) => el('span', i < score.stars ? 'on' : 'off', '★')),
     );
     stars.setAttribute('aria-label', t('end.stars', { n: score.stars }));
-    $('end-points').textContent = t('end.score', { points: formatNumber(score.points) });
+    $('end-points').textContent = t('end.score', { points: formatNumber(score.points), max: formatNumber(cfg.score.maxPoints) });
+
+    // The three KPIs that make up the score.
+    const k = score.kpis;
+    const kpiRows = [
+      ['reliability', t('kpi.reliability'), `${formatNumber(k.reliability.value, 1)}%`,
+        score.shedStages > 0 ? t('kpi.reliabilityShed', { n: score.shedStages }) : t('kpi.reliabilityHint')],
+      ['cost', t('kpi.cost'), t('fuel.costPerKWh', { v: formatNumber(k.cost.value, 2) }), t('kpi.costHint', { total: formatNumber(score.costNTD / 1e6) })],
+      ['carbon', t('kpi.carbon'), `${formatNumber(k.carbon.value)} g/kWh`, t('kpi.carbonHint', { kt: formatNumber(score.co2Tonnes / 1000, 1) })],
+    ];
+    $('end-kpis').replaceChildren(
+      ...kpiRows.map(([id, label, value, hint]) => {
+        const li = el('li', 'kpi');
+        const head = el('div', 'kpi-head');
+        head.append(el('span', 'kpi-label', label), el('strong', 'kpi-value', value));
+        const bar = el('div', 'kpi-bar');
+        const fill = el('span');
+        fill.style.width = `${k[id].score}%`;
+        bar.append(fill);
+        const foot = el('div', 'kpi-foot');
+        foot.append(
+          el('span', '', hint),
+          el('span', 'kpi-score', t('kpi.score', { score: formatNumber(k[id].score), weight: formatNumber(k[id].weight * 100) })),
+        );
+        li.append(head, bar, foot);
+        return li;
+      }),
+    );
+
     const rows = [
-      [t('end.normal'), `${formatNumber(score.normalPct, 1)}%`],
       [t('end.shed'), formatNumber(score.shedStages)],
       [t('end.unserved'), formatEnergy(score.unservedMWh)],
-      [t('end.cost'), `NT$ ${formatNumber(score.costNTD / 1e6)} M`],
       [t('end.gasOil'), `NT$ ${formatNumber(score.gasOilCostNTD / 1e6)} M`],
-      [t('end.co2'), `${formatNumber(score.co2Tonnes / 1000, 1)} kt`],
-      [t('end.intensity'), `${formatNumber(score.co2Intensity, 2)} kg/kWh`],
       [t('end.re'), `${formatNumber(score.renewableSharePct, 1)}%`],
       [t('end.curtailed'), `${formatEnergy(score.curtailedMWh)} (${formatNumber(score.curtailedPct, 1)}%)`],
     ];
@@ -618,6 +714,7 @@ export function createPlay({ cfg, onQuit, operator = null }) {
     chart.reset(world);
     chart.record(state);
     buildCards();
+    buildFuelRows();
     clearLog();
     render();
     chart.draw(state, true);

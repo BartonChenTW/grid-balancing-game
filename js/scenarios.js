@@ -216,7 +216,11 @@ export function expandUnits(scenario, types, options = {}) {
     const type = types[entry.type];
     const count = entry.count ?? 1;
     const name = entry.name ?? entry.type;
-    const auto = (type.storage || type.activationLimited) ? Boolean(options.autoStorage) : type.autoCapable ? Boolean(options.autoBackup) : false;
+    let auto = false;
+    if (type.storage || type.activationLimited) auto = Boolean(options.autoStorage);
+    else if (type.autoRole === 'backup') auto = Boolean(options.autoBackup);
+    else if (type.autoRole === 'follow') auto = Boolean(options.autoFollow);
+    else if (type.autoRole === 'hydro' || type.autoRole === 'curtail') auto = Boolean(options.autoRenewables);
     const first = units.length;
     for (let k = 0; k < count; k++) {
       units.push({
@@ -269,7 +273,8 @@ export function autoCommit(world, cfg = defaultConfig) {
   const onlineSet = new Set(online);
   for (const i of flexible) {
     // Automatic backup peakers wait warm on standby so they can respond within minutes.
-    const spare = units[i].auto && hasStandbyType(types[units[i].type]) ? 'standby' : 'offline';
+    const type = types[units[i].type];
+    const spare = units[i].auto && type.autoRole === 'backup' && hasStandbyType(type) ? 'standby' : 'offline';
     units[i].initialState = onlineSet.has(i) ? 'online' : spare;
   }
   return { ...world, units };
@@ -278,16 +283,19 @@ export function autoCommit(world, cfg = defaultConfig) {
 /**
  * Combines a scenario (fleet), a day type and options into a world for sim.js.
  * options: difficulty ('easy' | 'normal' | 'hard') sets defaults; assist,
- * accidents ('none' | 'scheduled' | 'random' | 'both'), autoStorage and
- * autoBackup override them.
+ * accidents ('none' | 'scheduled' | 'random' | 'both'), autoStorage,
+ * autoBackup, autoFollow (nuclear, coal and gas follow the load) and
+ * autoRenewables (hydro, solar and wind) override them.
  */
-export function buildWorld({ scenario, day, types, difficulty = 'normal', assist, accidents, autoStorage, autoBackup, cfg = defaultConfig }) {
+export function buildWorld({ scenario, day, types, difficulty = 'normal', assist, accidents, autoStorage, autoBackup, autoFollow, autoRenewables, cfg = defaultConfig }) {
   const diff = cfg.difficulties[difficulty] ?? cfg.difficulties.normal;
   const mode = accidents ?? diff.accidents;
   const scheduled = mode === 'scheduled' || mode === 'both';
   const options = {
     autoStorage: autoStorage ?? diff.autoStorage,
     autoBackup: autoBackup ?? diff.autoBackup,
+    autoFollow: autoFollow ?? diff.autoFollow,
+    autoRenewables: autoRenewables ?? diff.autoRenewables,
   };
   const { units, techs } = expandUnits(scenario, types, options);
   const world = {
@@ -307,6 +315,8 @@ export function buildWorld({ scenario, day, types, difficulty = 'normal', assist
     assist: assist ?? diff.assist,
     autoStorage: options.autoStorage,
     autoBackup: options.autoBackup,
+    autoFollow: options.autoFollow,
+    autoRenewables: options.autoRenewables,
     forecastErrorPct: diff.forecastErrorPct,
   };
   return autoCommit(world, cfg);

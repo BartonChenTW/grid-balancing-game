@@ -31,7 +31,6 @@ function setupFooter() {
   $('link-issues').href = a.issues;
   $('link-email').href = `mailto:${a.email}`;
   $('link-email').title = a.email;
-  $('link-linkedin').href = a.linkedin;
   $('link-repo').href = a.repo;
   $('link-model').href = a.model;
 }

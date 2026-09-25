@@ -30,7 +30,6 @@ export const config = {
   about: {
     author: 'Barton Chen',
     email: 'barton.chen.energy@gmail.com',
-    linkedin: 'https://www.linkedin.com/in/bartonchen/',
     repo: 'https://github.com/BartonChenTW/grid-balancing-game',
     issues: 'https://github.com/BartonChenTW/grid-balancing-game/issues/new/choose',
     model: 'https://bartonchentw.github.io/pypsa-earth/',

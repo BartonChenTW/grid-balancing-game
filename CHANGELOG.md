@@ -4,13 +4,17 @@
 
 The version and release date are shown in the game's header, so you can check which version you are playing.
 
+## 0.4.5 — 2026-09-25
+
+- The LinkedIn link is removed from the game and the READMEs.
+
 ## 0.4.4 — 2026-09-25
 
 - The core lesson is shortened to: “Stability comes from flexibility, the ability to follow the load.”
 
 ## 0.4.3 — 2026-09-25
 
-- Contact and source links on every screen of the game: the author, email, LinkedIn, feedback via GitHub issues, and the source code on GitHub.
+- Contact and source links on every screen of the game: the author, email, feedback via GitHub issues, and the source code on GitHub.
 - The GitHub repository is bilingual: README, contributing guide and changelog in English and Traditional Chinese, and bilingual issue forms for feedback and bug reports.
 
 ## 0.4.2 — 2026-09-25

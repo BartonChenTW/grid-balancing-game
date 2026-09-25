@@ -78,7 +78,6 @@ Made by **Barton Chen**.
 
 - Feedback, ideas or bugs: [open an issue](https://github.com/BartonChenTW/grid-balancing-game/issues/new/choose) (English or 中文).
 - Email: [barton.chen.energy@gmail.com](mailto:barton.chen.energy@gmail.com)
-- LinkedIn: [linkedin.com/in/bartonchen](https://www.linkedin.com/in/bartonchen/)
 - Related: [Taiwan power model (PyPSA-Earth)](https://bartonchentw.github.io/pypsa-earth/)
 
 ## Development

@@ -78,7 +78,6 @@
 
 - 意見回饋、想法或問題回報：[開一個 issue](https://github.com/BartonChenTW/grid-balancing-game/issues/new/choose)（中文或英文皆可）。
 - 電子郵件：[barton.chen.energy@gmail.com](mailto:barton.chen.energy@gmail.com)
-- LinkedIn：[linkedin.com/in/bartonchen](https://www.linkedin.com/in/bartonchen/)
 - 相關專案：[台灣電力模型（PyPSA-Earth）](https://bartonchentw.github.io/pypsa-earth/)
 
 ## 開發

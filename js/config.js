@@ -28,7 +28,7 @@ export const config = {
 
   // Leaderboard (Cloudflare Worker in leaderboard/). Empty url = leaderboard hidden.
   leaderboard: {
-    url: '',
+    url: 'https://follow-the-load-leaderboard.barton-chen-energy.workers.dev',
     boardSize: 10, // entries on the end screen
     previewSize: 5, // entries on the setup screen
     timeoutMs: 8000,

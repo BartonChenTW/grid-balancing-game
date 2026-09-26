@@ -15,6 +15,6 @@ enabled = false
 [[d1_databases]]
 binding = "DB"
 database_name = "follow-the-load"
-database_id = "REPLACE_WITH_ID_FROM_wrangler_d1_create"
+database_id = "6da5c7c9-93fd-4879-921e-6534e28bce84"
 
 # The admin token is a secret, set with:  npx wrangler secret put ADMIN_TOKEN

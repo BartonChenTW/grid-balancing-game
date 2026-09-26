@@ -29,7 +29,7 @@
   --series-hydro: #2a78d6;
   --series-wind: #1baf7a;
   --series-solar: #eda100;
-  --series-storage: #008300;
+  --series-storage: #9856a7;
   --series-other: #e34948;
 
   --radius: 12px;
@@ -61,7 +61,7 @@
     --series-hydro: #3987e5;
     --series-wind: #199e70;
     --series-solar: #c98500;
-    --series-storage: #008300;
+    --series-storage: #a32ebb;
     --series-other: #e66767;
   }
 }
@@ -87,7 +87,7 @@
   --series-hydro: #3987e5;
   --series-wind: #199e70;
   --series-solar: #c98500;
-  --series-storage: #008300;
+  --series-storage: #a32ebb;
   --series-other: #e66767;
 }
 

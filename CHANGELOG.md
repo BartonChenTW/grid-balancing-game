@@ -4,6 +4,10 @@
 
 The version and release date are shown in the game's header, so you can check which version you are playing.
 
+## 0.6.3 — 2026-09-26
+
+- **Storage is now purple** in the chart and everywhere else, so it no longer looks like wind (both were green). The new colour was checked for colour-blind readers against every other series, in light and dark mode.
+
 ## 0.6.2 — 2026-09-26
 
 - **Every difficulty counts on the leaderboard, whatever the options.** Any game on a Taiwan fleet can submit its score. Games played with options other than the difficulty’s defaults (assist, accidents, Auto) are ranked on the same board with a “custom options” tag, and are verified by replaying them with those options.

@@ -4,6 +4,10 @@
 
 The version and release date are shown in the game's header, so you can check which version you are playing.
 
+## 0.6.2 — 2026-09-26
+
+- **Every difficulty counts on the leaderboard, whatever the options.** Any game on a Taiwan fleet can submit its score. Games played with options other than the difficulty’s defaults (assist, accidents, Auto) are ranked on the same board with a “custom options” tag, and are verified by replaying them with those options.
+
 ## 0.6.1 — 2026-09-26
 
 - **The leaderboard is live.** Ranked games can now submit their score; it is checked by replaying the day within about 30 minutes.

@@ -12,6 +12,21 @@ export const LIMITS = {
 };
 
 const DIFFICULTIES = ['easy', 'normal', 'hard'];
+const ACCIDENT_MODES = ['none', 'scheduled', 'random', 'both']; // as in js/scenarios.js
+const OPTION_FLAGS = ['assist', 'autoStorage', 'autoBackup', 'autoFollow', 'autoRenewables']; // with accidents: OPTION_KEYS in js/replay.js
+
+/** The game's setup options, or null when left out (the difficulty's defaults). Returns undefined if invalid. */
+function cleanOptions(value) {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'object' || Array.isArray(value)) return undefined;
+  if (!ACCIDENT_MODES.includes(value.accidents)) return undefined;
+  const options = { accidents: value.accidents };
+  for (const key of OPTION_FLAGS) {
+    if (typeof value[key] !== 'boolean') return undefined;
+    options[key] = value[key];
+  }
+  return options;
+}
 
 // Invisible and control characters: C0/C1 controls, zero-width and bidi marks,
 // line/paragraph separators, byte-order mark.
@@ -33,6 +48,8 @@ export function validateSubmission(body) {
   if (typeof body.scenario !== 'string' || !/^taiwan-\d{4}$/.test(body.scenario)) return { ok: false, error: 'scenario must be a Taiwan fleet' };
   if (typeof body.day !== 'string' || !/^[A-Za-z]{1,40}$/.test(body.day)) return { ok: false, error: 'invalid day' };
   if (!DIFFICULTIES.includes(body.difficulty)) return { ok: false, error: 'invalid difficulty' };
+  const options = cleanOptions(body.options);
+  if (options === undefined) return { ok: false, error: 'invalid options' };
   if (typeof body.version !== 'string' || !/^\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(body.version)) return { ok: false, error: 'invalid version' };
   if (!Number.isInteger(body.seed) || body.seed < 0 || body.seed > LIMITS.seedMax) return { ok: false, error: 'invalid seed' };
   if (!Number.isInteger(body.points) || body.points < 0 || body.points > LIMITS.pointsMax) return { ok: false, error: 'invalid points' };
@@ -54,6 +71,7 @@ export function validateSubmission(body) {
       scenario: body.scenario,
       day: body.day,
       difficulty: body.difficulty,
+      options,
       version: body.version,
       seed: body.seed,
       points: body.points,

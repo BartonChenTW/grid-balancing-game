@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 
 import { config } from '../js/config.js';
 import { techAction } from '../js/fleet.js';
-import { ACTION_CODES, isRanked, replayDay } from '../js/replay.js';
+import { ACTION_CODES, gameOptions, isRanked, replayDay, usesDefaultOptions } from '../js/replay.js';
 import { buildWorld } from '../js/scenarios.js';
 import { computeScore } from '../js/score.js';
 import { createState, nextRandom, step } from '../js/sim.js';
@@ -15,8 +15,8 @@ const scenario = read('data/scenarios/taiwan-2025.json');
 const day = read('data/days.json').days[0];
 
 /** Plays a day the way the game does: moves between steps, recorded as [minute, tech, code]. */
-function playRecorded(difficulty, seed) {
-  const world = buildWorld({ scenario, day, types, difficulty, cfg: config });
+function playRecorded(difficulty, seed, options = {}) {
+  const world = buildWorld({ scenario, day, types, difficulty, ...options, cfg: config });
   let state = createState(world, config, seed);
   const moves = [];
   let r = 7;
@@ -62,12 +62,34 @@ test('malformed or out-of-order moves are rejected', () => {
   assert.throws(() => replayDay({ ...base, moves: [[5000, 0, 0]] }), /after the end/);
 });
 
-test('only Taiwan fleets with the difficulty defaults are ranked', () => {
-  const d = config.difficulties.normal;
-  const ranked = { scenarioId: 'taiwan-2025', difficulty: 'normal', ...d };
-  assert.equal(isRanked(ranked), true);
+test('every difficulty on a Taiwan fleet is ranked, whatever the options; not a custom fleet or the demo', () => {
+  for (const difficulty of ['easy', 'normal', 'hard']) {
+    assert.equal(isRanked({ scenarioId: 'taiwan-2025', difficulty }), true);
+  }
+  const ranked = { scenarioId: 'taiwan-2025', difficulty: 'normal' };
   assert.equal(isRanked({ ...ranked, scenarioId: 'custom' }), false);
-  assert.equal(isRanked({ ...ranked, assist: !d.assist }), false);
-  assert.equal(isRanked({ ...ranked, accidents: 'both' }), false);
+  assert.equal(isRanked({ ...ranked, difficulty: 'impossible' }), false);
   assert.equal(isRanked({ ...ranked, demo: true }), false);
+});
+
+test('options other than the difficulty defaults are recognised (for the "custom options" tag)', () => {
+  const d = config.difficulties.normal;
+  assert.equal(usesDefaultOptions('normal', gameOptions(d)), true);
+  assert.equal(usesDefaultOptions('normal', null), true, 'no options = defaults (older submissions)');
+  assert.equal(usesDefaultOptions('normal', { ...gameOptions(d), assist: !d.assist }), false);
+  assert.equal(usesDefaultOptions('normal', { ...gameOptions(d), accidents: 'both' }), false);
+  assert.equal(usesDefaultOptions('easy', gameOptions(d)), false);
+});
+
+test('a game with custom options replays exactly only with those options', () => {
+  const options = { assist: true, accidents: 'both', autoStorage: true, autoBackup: true, autoFollow: true, autoRenewables: true };
+  const original = playRecorded('hard', 2024, options);
+  const replayed = replayDay({ scenario, day, types, difficulty: 'hard', options, seed: 2024, moves: original.moves, cfg: config });
+  assert.equal(replayed.score.points, original.points);
+  assert.equal(replayed.state.frequencyHz, original.state.frequencyHz);
+  const withDefaults = replayDay({ scenario, day, types, difficulty: 'hard', seed: 2024, moves: original.moves, cfg: config });
+  assert.notEqual(withDefaults.state.stats.costNTD, original.state.stats.costNTD);
+  // Unknown keys cannot change what is replayed.
+  const sneaky = replayDay({ scenario, day, types, difficulty: 'hard', options: { ...options, cfg: {}, scenario: null }, seed: 2024, moves: original.moves, cfg: config });
+  assert.equal(sneaky.score.points, original.points);
 });

@@ -106,10 +106,8 @@ async function main() {
       const difficultyName = t(`difficulty.${difficulty}`);
       const label = [dayName, fleetName, difficultyName].join(' · ');
       show('play');
-      // Ranked = a Taiwan fleet with the difficulty's default options, not in demo mode.
-      const ranked = isRanked({ scenarioId: scenario.id, difficulty, assist: world.assist, accidents: world.accidents,
-        autoStorage: world.autoStorage, autoBackup: world.autoBackup, autoFollow: world.autoFollow,
-        autoRenewables: world.autoRenewables, demo }, config);
+      // Ranked = a Taiwan fleet on any difficulty and options, not in demo mode.
+      const ranked = isRanked({ scenarioId: scenario.id, difficulty, demo }, config);
       play.start(world, { label, dayName, fleetName, difficultyName, discountRatePct, ranked });
       if (!tutorialSeen() && !demo) tutorial.start();
     },

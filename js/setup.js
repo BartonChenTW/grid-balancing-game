@@ -1,7 +1,7 @@
 // Step 2: choose a fleet (or build a custom mix), a day and a difficulty.
 import { capitalCost } from './economics.js';
 import { fetchTop, leaderboardEnabled, renderBoard } from './leaderboard.js';
-import { isRanked, isRankedScenario } from './replay.js';
+import { isRankedScenario, usesDefaultOptions } from './replay.js';
 import { ACCIDENT_MODES, capacityByType, customScenario } from './scenarios.js';
 import { formatBigMoney, formatBigMoneyRange, formatNumber, t, tOr, unitName } from './strings.js';
 
@@ -371,8 +371,8 @@ export function createSetup({ data, cfg, onStart, onBack }) {
     const section = $('setup-lb');
     section.hidden = !leaderboardEnabled(cfg) || !isRankedScenario(scenario.id);
     if (section.hidden) return;
-    const ranked = isRanked({ scenarioId: scenario.id, ...selection }, cfg);
-    $('setup-lb-note').textContent = ranked ? t('lb.previewRanked') : t('lb.previewUnranked', { difficulty: t(`difficulty.${selection.difficulty}`) });
+    const standard = usesDefaultOptions(selection.difficulty, selection, cfg);
+    $('setup-lb-note').textContent = standard ? t('lb.previewRanked') : t('lb.previewCustom', { difficulty: t(`difficulty.${selection.difficulty}`) });
     const key = [scenario.id, selection.day, selection.difficulty].join('|');
     if (key === lbKey) return;
     lbKey = key;

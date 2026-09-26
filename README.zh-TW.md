@@ -58,7 +58,7 @@
 
 ## 排行榜
 
-列入排名的遊戲（使用台灣電源組合、採用該難度預設選項）可以用暱稱送出分數。分數會立即顯示為「驗證中」，並由 GitHub Action（`tools/verify-scores.js`）使用當時的遊戲版本重播操作紀錄來驗證。後端是 [leaderboard/](leaderboard/) 中的小型 Cloudflare Worker 與 D1 資料庫；部署方式見 [leaderboard/DEPLOY.md](leaderboard/DEPLOY.md)。儲存內容：暱稱、分數、設定與操作紀錄；不收集電子郵件，也不保存 IP 位址。
+所有使用台灣電源組合的遊戲都列入排名（任何難度皆可），可以用暱稱送出分數；使用與該難度預設不同選項的分數會標示「自訂選項」。分數會立即顯示為「驗證中」，並由 GitHub Action（`tools/verify-scores.js`）使用當時的遊戲版本重播操作紀錄來驗證。後端是 [leaderboard/](leaderboard/) 中的小型 Cloudflare Worker 與 D1 資料庫；部署方式見 [leaderboard/DEPLOY.md](leaderboard/DEPLOY.md)。儲存內容：暱稱、分數、設定與操作紀錄；不收集電子郵件，也不保存 IP 位址。
 
 ## 資料來源
 

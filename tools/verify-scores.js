@@ -56,10 +56,15 @@ async function verify(entry) {
   const scenarioFile = join(game.dir, 'data', 'scenarios', `${entry.scenario}.json`);
   const day = game.days.find((d) => d.id === entry.day);
   if (!existsSync(scenarioFile) || !day) return { id: entry.id, status: 'rejected', reason: 'unknown fleet or day' };
+  // Versions before options were recorded can only replay the difficulty's defaults.
+  if (entry.options && !game.replay.REPLAYS_OPTIONS) {
+    return { id: entry.id, status: 'rejected', reason: `version ${entry.version} cannot replay custom options` };
+  }
   try {
     const scenario = JSON.parse(readFileSync(scenarioFile, 'utf8'));
     const { score } = game.replay.replayDay({
-      scenario, day, types: game.types, difficulty: entry.difficulty, seed: entry.seed, moves: entry.moves, cfg: game.config,
+      scenario, day, types: game.types, difficulty: entry.difficulty, options: entry.options ?? undefined,
+      seed: entry.seed, moves: entry.moves, cfg: game.config,
     });
     if (score.points !== entry.points || score.stars !== entry.stars) {
       return { id: entry.id, status: 'rejected', reason: `replay gives ${score.points} points, ${score.stars} stars` };

@@ -16,25 +16,49 @@ export function isRankedScenario(scenarioId) {
   return /^taiwan-\d{4}$/.test(scenarioId);
 }
 
-/**
- * A game is ranked when it uses a Taiwan fleet and exactly the difficulty's
- * default options (assist, accidents, Auto modes), without the demo operator.
- * options: { scenarioId, difficulty, assist, accidents, autoStorage, autoBackup, autoFollow, autoRenewables, demo }
- */
-export function isRanked(options, cfg = defaultConfig) {
-  const d = cfg.difficulties[options.difficulty];
-  if (!d || options.demo || !isRankedScenario(options.scenarioId)) return false;
-  if (options.accidents !== d.accidents) return false;
-  return ['assist', 'autoStorage', 'autoBackup', 'autoFollow', 'autoRenewables']
-    .every((key) => Boolean(options[key]) === Boolean(d[key]));
+/** The setup options a leaderboard score records, so the game can be replayed with them. */
+export const OPTION_KEYS = ['assist', 'accidents', 'autoStorage', 'autoBackup', 'autoFollow', 'autoRenewables'];
+
+/** The recorded options of a game (a world or a setup selection). */
+export function gameOptions(source) {
+  const o = {};
+  for (const key of OPTION_KEYS) o[key] = key === 'accidents' ? source.accidents : Boolean(source[key]);
+  return o;
 }
 
 /**
- * Plays the day again from the seed and moves.
+ * A game is ranked when it uses a Taiwan fleet, on any difficulty and with
+ * any options, without the demo operator.
+ * options: { scenarioId, difficulty, demo }
+ */
+export function isRanked(options, cfg = defaultConfig) {
+  return Boolean(cfg.difficulties[options.difficulty]) && !options.demo && isRankedScenario(options.scenarioId);
+}
+
+/**
+ * True when the options are exactly the difficulty's defaults. Scores with
+ * other options are still ranked but tagged "custom options" on the board.
+ * No options (older submissions) means the defaults.
+ */
+export function usesDefaultOptions(difficulty, options, cfg = defaultConfig) {
+  const d = cfg.difficulties[difficulty];
+  if (!d || !options) return Boolean(d);
+  if (options.accidents !== d.accidents) return false;
+  return OPTION_KEYS.filter((key) => key !== 'accidents').every((key) => Boolean(options[key]) === Boolean(d[key]));
+}
+
+/** replayDay accepts the recorded options (tools/verify-scores.js checks this per game version). */
+export const REPLAYS_OPTIONS = true;
+
+/**
+ * Plays the day again from the seed, options and moves. `options` (see
+ * OPTION_KEYS) override the difficulty's defaults; leave it out for the defaults.
  * Throws if the moves are malformed or out of order.
  */
-export function replayDay({ scenario, day, types, difficulty, seed, moves, cfg = defaultConfig }) {
-  const world = buildWorld({ scenario, day, types, difficulty, cfg });
+export function replayDay({ scenario, day, types, difficulty, options, seed, moves, cfg = defaultConfig }) {
+  const picked = {};
+  for (const key of OPTION_KEYS) if (options?.[key] !== undefined) picked[key] = options[key];
+  const world = buildWorld({ scenario, day, types, difficulty, ...picked, cfg });
   let state = createState(world, cfg, seed);
   let i = 0;
   const techCount = world.techs.length;

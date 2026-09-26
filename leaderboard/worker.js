@@ -1,18 +1,21 @@
 // Follow the Load leaderboard: a Cloudflare Worker with a D1 database.
 //
 // Public:
-//   GET  /scores?scenario=&day=&difficulty=&limit=   top scores (pending + verified)
+//   GET  /scores?scenario=&day=&difficulty=&limit=   top scores (pending + verified), with their options
 //   POST /scores                                      submit a score (stored as pending)
 // Admin (Authorization: Bearer ADMIN_TOKEN), used by the verification job:
 //   GET    /pending?limit=                            pending scores with seed and moves
 //   POST   /verdicts  { verdicts: [{ id, status, reason }] }
 //   DELETE /scores/:id                                remove a score (moderation)
 //
-// Stored per score: nickname, board (fleet, day, difficulty), game version,
+// Stored per score: nickname, board (fleet, day, difficulty), options (assist,
+// accidents, Auto modes; null = the difficulty's defaults), game version,
 // seed, moves, points, stars, status. No email and no IP address.
 import { validateSubmission } from './validate.js';
 
 const MAX_BODY_BYTES = 400_000;
+
+const parseOptions = (text) => (text ? JSON.parse(text) : null);
 const RESUBMIT_SECONDS = 20;
 
 function corsHeaders(request, env) {
@@ -49,11 +52,12 @@ async function topScores(url, env, cors) {
   const difficulty = url.searchParams.get('difficulty') ?? '';
   const limit = Math.min(50, Math.max(1, Number(url.searchParams.get('limit')) || 10));
   const { results } = await env.DB.prepare(
-    `SELECT id, nickname, points, stars, status, created_at FROM scores
+    `SELECT id, nickname, options, points, stars, status, created_at FROM scores
      WHERE scenario = ? AND day = ? AND difficulty = ? AND status != 'rejected'
      ORDER BY points DESC, created_at ASC LIMIT ?`,
   ).bind(scenario, day, difficulty, limit).all();
-  return json({ scores: results }, 200, { ...cors, 'Cache-Control': 'no-store' });
+  const scores = results.map((r) => ({ ...r, options: parseOptions(r.options) }));
+  return json({ scores }, 200, { ...cors, 'Cache-Control': 'no-store' });
 }
 
 async function submit(request, env, cors) {
@@ -75,9 +79,10 @@ async function submit(request, env, cors) {
   if (recent && recent.n > 0) return json({ error: 'please wait a moment before submitting again' }, 429, cors);
 
   const inserted = await env.DB.prepare(
-    `INSERT INTO scores (nickname, scenario, day, difficulty, version, seed, moves, points, stars)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
-  ).bind(s.nickname, s.scenario, s.day, s.difficulty, s.version, s.seed, JSON.stringify(s.moves), s.points, s.stars).first();
+    `INSERT INTO scores (nickname, scenario, day, difficulty, options, version, seed, moves, points, stars)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+  ).bind(s.nickname, s.scenario, s.day, s.difficulty, s.options ? JSON.stringify(s.options) : null,
+    s.version, s.seed, JSON.stringify(s.moves), s.points, s.stars).first();
   const better = await env.DB.prepare(
     `SELECT COUNT(*) AS n FROM scores WHERE scenario = ? AND day = ? AND difficulty = ?
      AND status != 'rejected' AND points > ?`,
@@ -88,10 +93,10 @@ async function submit(request, env, cors) {
 async function pending(url, env, cors) {
   const limit = Math.min(200, Math.max(1, Number(url.searchParams.get('limit')) || 50));
   const { results } = await env.DB.prepare(
-    `SELECT id, scenario, day, difficulty, version, seed, moves, points, stars FROM scores
+    `SELECT id, scenario, day, difficulty, options, version, seed, moves, points, stars FROM scores
      WHERE status = 'pending' ORDER BY id ASC LIMIT ?`,
   ).bind(limit).all();
-  return json({ scores: results.map((r) => ({ ...r, moves: JSON.parse(r.moves) })) }, 200, cors);
+  return json({ scores: results.map((r) => ({ ...r, options: parseOptions(r.options), moves: JSON.parse(r.moves) })) }, 200, cors);
 }
 
 async function verdicts(request, env, cors) {

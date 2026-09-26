@@ -3,7 +3,7 @@
 import { createChart } from './chart.js';
 import { capitalCost } from './economics.js';
 import { fetchTop, leaderboardEnabled, renderBoard, savedNickname, saveNickname, submitScore } from './leaderboard.js';
-import { ACTION_CODES } from './replay.js';
+import { ACTION_CODES, gameOptions } from './replay.js';
 import { reportCsv, reportHtml } from './report.js';
 import { computeScore, pickLesson } from './score.js';
 import { canTechAction, techAction, techSummary } from './fleet.js';
@@ -706,6 +706,7 @@ export function createPlay({ cfg, onQuit, operator = null }) {
       const r = await submitScore(cfg, {
         nickname,
         ...board(),
+        options: gameOptions(world),
         version: VERSION,
         seed: initialSeed,
         moves,

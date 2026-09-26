@@ -48,3 +48,15 @@ test('bad fields are rejected with a reason', () => {
     assert.ok(r.error.length > 0);
   }
 });
+
+test('options: optional, and when given all six must be valid', () => {
+  assert.equal(validateSubmission(good).value.options, null);
+  const options = { assist: true, accidents: 'both', autoStorage: false, autoBackup: true, autoFollow: false, autoRenewables: true };
+  assert.deepEqual(validateSubmission({ ...good, options }).value.options, options);
+  assert.deepEqual(validateSubmission({ ...good, options: { ...options, extra: 1 } }).value.options, options, 'unknown keys dropped');
+  for (const bad of [[], 'x', { ...options, accidents: 'many' }, { ...options, assist: 'yes' }, { accidents: 'none' }]) {
+    const r = validateSubmission({ ...good, options: bad });
+    assert.equal(r.ok, false, JSON.stringify(bad));
+    assert.match(r.error, /options/);
+  }
+});

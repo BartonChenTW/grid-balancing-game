@@ -1,5 +1,6 @@
 // Leaderboard client: talks to the Cloudflare Worker in leaderboard/ and
 // renders a board. Everything here is off while config.leaderboard.url is empty.
+import { usesDefaultOptions } from './replay.js';
 import { formatNumber, t } from './strings.js';
 
 export function leaderboardEnabled(cfg) {
@@ -19,10 +20,16 @@ async function call(cfg, path, options = {}) {
   }
 }
 
-/** Top scores of one board: { scenario, day, difficulty }. */
+/**
+ * Top scores of one board: { scenario, day, difficulty }. Each score gets
+ * `custom: true` when it was played with options other than the difficulty's defaults.
+ */
 export function fetchTop(cfg, board, limit) {
   const q = new URLSearchParams({ ...board, limit: String(limit) });
-  return call(cfg, `/scores?${q}`).then((r) => r.scores ?? []);
+  return call(cfg, `/scores?${q}`).then((r) => (r.scores ?? []).map((s) => ({
+    ...s,
+    custom: !usesDefaultOptions(board.difficulty, s.options, cfg),
+  })));
 }
 
 /** Submits a score; resolves to { id, rank, status }. */
@@ -48,7 +55,16 @@ export function renderBoard(list, scores, highlightId = null) {
       rank.textContent = `${i + 1}`;
       const name = document.createElement('span');
       name.className = 'lb-name';
-      name.textContent = s.nickname; // player-supplied: always as text
+      const nick = document.createElement('span');
+      nick.textContent = s.nickname; // player-supplied: always as text
+      name.append(nick);
+      if (s.custom) {
+        const tag = document.createElement('small');
+        tag.className = 'lb-tag';
+        tag.textContent = t('lb.custom');
+        tag.title = t('lb.customHint');
+        name.append(tag);
+      }
       const points = document.createElement('strong');
       points.className = 'lb-points';
       points.textContent = formatNumber(s.points);

@@ -58,7 +58,7 @@ These are deliberate simplifications for teaching: one node with no transmission
 
 ## Leaderboard
 
-Ranked games (a Taiwan fleet with the difficulty’s default options) can post a score with a nickname. Scores show at once as “checking” and are verified by replaying the recorded moves in a GitHub Action (`tools/verify-scores.js`), using the game version they were played on. The backend is a small Cloudflare Worker with a D1 database in [leaderboard/](leaderboard/); see [leaderboard/DEPLOY.md](leaderboard/DEPLOY.md). Stored: nickname, score, settings and moves; no email and no IP addresses.
+Every game on a Taiwan fleet is ranked, on any difficulty, and can post a score with a nickname; scores played with options other than the difficulty’s defaults are tagged “custom options”. Scores show at once as “checking” and are verified by replaying the recorded moves in a GitHub Action (`tools/verify-scores.js`), using the game version they were played on. The backend is a small Cloudflare Worker with a D1 database in [leaderboard/](leaderboard/); see [leaderboard/DEPLOY.md](leaderboard/DEPLOY.md). Stored: nickname, score, settings and moves; no email and no IP addresses.
 
 ## Data sources
 

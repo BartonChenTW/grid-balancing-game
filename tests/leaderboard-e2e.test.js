@@ -49,11 +49,11 @@ function startServer(env) {
 }
 
 /** A played day with its seed, moves and score, as the game would submit it. */
-function playDay() {
+function playDay(options) {
   const types = JSON.parse(read('data/unit-types.json'));
   const scenario = JSON.parse(read('data/scenarios/taiwan-2016.json'));
   const day = JSON.parse(read('data/days.json')).days[0];
-  const world = buildWorld({ scenario, day, types, difficulty: 'easy', cfg: config });
+  const world = buildWorld({ scenario, day, types, difficulty: 'easy', ...options, cfg: config });
   const seed = 777;
   let state = createState(world, config, seed);
   const moves = [];
@@ -67,7 +67,7 @@ function playDay() {
   }
   const score = computeScore(state, config);
   const version = JSON.parse(read('package.json')).version;
-  return { scenario: 'taiwan-2016', day: day.id, difficulty: 'easy', version, seed, moves, points: score.points, stars: score.stars };
+  return { scenario: 'taiwan-2016', day: day.id, difficulty: 'easy', options, version, seed, moves, points: score.points, stars: score.stars };
 }
 
 test('submit → shows as checking → verifier replays → verified or rejected', async () => {
@@ -83,12 +83,19 @@ test('submit → shows as checking → verifier replays → verified or rejected
     assert.equal(honest.headers.get('access-control-allow-origin'), 'https://bartonchentw.github.io');
     const cheat = await post({ ...game, nickname: 'Cheater', points: Math.min(1000, game.points + 50) });
     assert.equal(cheat.status, 201);
+    // Easy with the options changed: ranked too, and replayed with those options.
+    const custom = playDay({ assist: false, accidents: 'both', autoStorage: false, autoBackup: false, autoFollow: false, autoRenewables: false });
+    assert.equal((await post({ ...custom, nickname: 'Custom' })).status, 201);
+    // The same game claimed as played with the defaults does not replay to its score.
+    assert.equal((await post({ ...custom, options: undefined, nickname: 'NoOptions' })).status, 201);
     assert.equal((await post({ ...game, nickname: 'Honest' })).status, 429); // flood control
 
     const boardUrl = `${base}/scores?scenario=taiwan-2016&day=${game.day}&difficulty=easy`;
     let board = (await (await fetch(boardUrl)).json()).scores;
-    assert.equal(board.length, 2);
+    assert.equal(board.length, 4);
     assert.ok(board.every((s) => s.status === 'pending'));
+    assert.deepEqual(board.find((s) => s.nickname === 'Custom').options, custom.options);
+    assert.equal(board.find((s) => s.nickname === 'Honest').options, null);
     assert.equal((await fetch(`${base}/pending`)).status, 401); // admin only
 
     const out = await new Promise((resolve, reject) => {
@@ -97,14 +104,15 @@ test('submit → shows as checking → verifier replays → verified or rejected
         env: { ...process.env, LEADERBOARD_URL: base, LEADERBOARD_ADMIN_TOKEN: env.ADMIN_TOKEN },
       }, (err, stdout, stderr) => (err ? reject(new Error(stderr || err.message)) : resolve(stdout)));
     });
-    assert.match(out, /Checked 2 score/);
+    assert.match(out, /Checked 4 score/);
 
     board = (await (await fetch(boardUrl)).json()).scores;
-    assert.equal(board.length, 1, 'the rejected score leaves the board');
-    assert.equal(board[0].nickname, 'Honest');
-    assert.equal(board[0].status, 'verified');
-    const rejected = env.DB.raw.prepare("SELECT reason FROM scores WHERE nickname = 'Cheater'").get();
-    assert.match(rejected.reason, /replay gives/);
+    assert.deepEqual(board.map((s) => s.nickname).sort(), ['Custom', 'Honest'], 'rejected scores leave the board');
+    assert.ok(board.every((s) => s.status === 'verified'));
+    for (const nickname of ['Cheater', 'NoOptions']) {
+      const rejected = env.DB.raw.prepare('SELECT reason FROM scores WHERE nickname = ?').get(nickname);
+      assert.match(rejected.reason, /replay gives/, nickname);
+    }
   } finally {
     server.close();
   }

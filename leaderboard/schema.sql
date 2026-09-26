@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS scores (
   scenario    TEXT    NOT NULL,          -- e.g. taiwan-2025
   day         TEXT    NOT NULL,          -- e.g. summerWeekday
   difficulty  TEXT    NOT NULL,          -- easy | normal | hard
+  options     TEXT,                      -- JSON {assist, accidents, autoStorage, ...}; NULL = the difficulty's defaults
   version     TEXT    NOT NULL,          -- game version the day was played on
   seed        INTEGER NOT NULL,
   moves       TEXT    NOT NULL,          -- JSON [[minute, tech, code], ...]

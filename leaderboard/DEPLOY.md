@@ -15,6 +15,17 @@ the leaderboard stays hidden until `leaderboard.url` is set in `js/config.js`.
 - The Worker does not need redeploying for new game versions; only when
   `worker.js`, `validate.js` or `schema.sql` change.
 
+## Updating an existing deployment
+
+Apply database changes before deploying the Worker that uses them:
+
+```sh
+cd leaderboard
+# 0.6.2 added the options column (a database created from schema.sql after that already has it):
+npx wrangler@4 d1 execute follow-the-load --remote --command "ALTER TABLE scores ADD COLUMN options TEXT"
+npx wrangler@4 deploy
+```
+
 ## Before you start
 
 1. A Cloudflare account with a `workers.dev` subdomain (Dashboard → Compute →
@@ -74,6 +85,6 @@ or delete the row in the Cloudflare dashboard (Storage & databases → D1 → fo
 
 ## Privacy
 
-Stored per score: nickname, fleet, day, difficulty, game version, seed, moves,
+Stored per score: nickname, fleet, day, difficulty, options, game version, seed, moves,
 points, stars and status. No email. Request logging is off (`[observability]
 enabled = false`), so the leaderboard keeps no IP addresses.

@@ -60,3 +60,11 @@ test('options: optional, and when given all six must be valid', () => {
     assert.match(r.error, /options/);
   }
 });
+
+test('the verifier finds a version without a tag; an unknown version gives null', async () => {
+  const { revisionOf } = await import('../tools/verify-scores.js');
+  const { execFileSync } = await import('node:child_process');
+  const committed = JSON.parse(execFileSync('git', ['show', 'HEAD:package.json'], { encoding: 'utf8' })).version;
+  assert.ok(revisionOf(committed), 'the committed version resolves (tag or HEAD)');
+  assert.equal(revisionOf('0.0.0'), null);
+});

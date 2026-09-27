@@ -68,9 +68,10 @@
 | 各類電源裝置容量（2016、2025） | 官方 | 能源署，發電裝置容量年資料，[data.gov.tw/dataset/16480](https://data.gov.tw/dataset/16480) |
 | 電網儲能目標、用電成長 | 官方展望 | 經濟部，全國電力資源供需報告，[data.gov.tw/dataset/16437](https://data.gov.tw/dataset/16437) |
 | 2050 年再生能源占比（60–70%） | 官方目標，待查證 | 國發會，臺灣2050淨零排放路徑，[ncsd.ndc.gov.tw](https://ncsd.ndc.gov.tw/Fore/nsdn/about0/2050Path) |
+| 2050 年各類電源裝置容量 | 模型結果 | [台灣能源模型](https://github.com/BartonChenTW/taiwan-energy-model) 2050 年主要情境（官方選項、各類燃料皆可進口、不新建核能）；電池採用官方 5.5 GW 目標 |
 | 建造成本、壽命、成本不確定性 | 模型假設 | [台灣 PyPSA-Earth 電力模型](https://bartonchentw.github.io/pypsa-earth/)：technology-data 2030 年推估 |
 | 每日負載曲線、太陽光電與風力曲線 | **示意資料** | 在 [tools/make-days.js](tools/make-days.js) 手繪，並依真實尖峰縮放 |
-| 機組動態、燃料成本、儲能規模、2050 年電源組合 | **示意值** | 為了遊戲性而設定 |
+| 機組動態、燃料成本、儲能容量（MWh）、2050 年尖峰負載 | **示意值** | 為了遊戲性而設定；2050 年尖峰由模型的年發電量估算 |
 
 年度數字整理自 [BartonChenTW/pypsa-earth（pypsa-taiwan-dev）](https://github.com/BartonChenTW/pypsa-earth/tree/pypsa-taiwan-dev) 的 `docs/data/taiwan_timeseries.csv`，其中記錄了每個數值的來源。[data/scenarios/](data/scenarios/) 中每個情境檔都有 `dataStatus`、`dataNotes` 與 `sources` 欄位，設定畫面的「關於資料」會顯示這些內容。
 

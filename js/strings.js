@@ -158,6 +158,11 @@ const en = {
   'fuel.gas': 'Gas',
   'fuel.oil': 'Oil',
   'fuel.other': 'Hydro, DSM',
+  // Added to a chart group or fuel label when the fleet has that type (labelWithExtras).
+  'labelExtra.sep': ', ',
+  'labelExtra.ammoniaCcgt': 'ammonia',
+  'labelExtra.geothermal': 'geothermal',
+  'labelExtra.biomass': 'biomass',
   'fuel.renewable': 'Solar, wind',
   'fuel.storage': 'Storage',
   'fuel.costPerKWh': 'NT$ {v}/kWh',
@@ -221,7 +226,10 @@ const en = {
   'unitType.coal': 'Coal',
   'unitType.gasCcgt': 'Gas (combined cycle)',
   'unitType.gasOcgt': 'Gas (peaker)',
+  'unitType.ammoniaCcgt': 'Ammonia (combined cycle)',
   'unitType.oil': 'Oil',
+  'unitType.geothermal': 'Geothermal',
+  'unitType.biomass': 'Biomass',
   'unitType.hydro': 'Hydro',
   'unitType.pumpedHydro': 'Pumped hydro',
   'unitType.battery': 'Battery',
@@ -380,6 +388,15 @@ export function has(key) {
 export function t(key, vars = {}) {
   const text = TABLES[lang][key] ?? en[key] ?? key;
   return text.replace(/\{(\w+)\}/g, (_, name) => String(vars[name] ?? ''));
+}
+
+/**
+ * A group label plus the names of the listed types that have a
+ * `labelExtra.<type>` string, e.g. "Gas" + ammoniaCcgt -> "Gas, ammonia".
+ */
+export function labelWithExtras(key, types) {
+  const extras = [...new Set(types)].filter((type) => has(`labelExtra.${type}`)).map((type) => t(`labelExtra.${type}`));
+  return [t(key), ...extras].join(t('labelExtra.sep'));
 }
 
 /** Like t(), but returns `fallback` when the key is missing (for names that live in data files). */

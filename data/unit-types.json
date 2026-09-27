@@ -1,5 +1,5 @@
 {
-  "_comment": "Illustrative values tuned for gameplay, not engineering data. startupMin: cold start to warm standby (units without syncMin go straight online); syncMin: standby to online; shutdownMin in game minutes; rampPctPerMin and minStablePct in % of unit size; inertiaH in seconds; costPerMWh in NT$ (placeholder marginal cost); standbyCostPerMWh: NT$ per MW of unit size per hour kept warm; co2PerMWh in tonnes; fuel: which fuel-cost group the type counts under; autoRole: what Auto does (follow = adjust output to follow the load; backup = start units when supply is short and stand them down after; hydro = cover shortfalls, pacing the day's water; curtail = run at full output, curtailed only for a surplus nothing else can absorb; storage and demand response have their own rules); unitMW: typical unit size used by the custom mix. capexEURPerKW (capexEURPerKWh and energyLifeYears for battery energy; capexOffshoreEURPerKW for offshore wind) and lifeYears are the technology-data 2030 projections (EUR, 2013 prices) used by the Taiwan PyPSA-Earth model (https://bartonchentw.github.io/pypsa-earth/, data/costs.csv; battery USD converted at 0.7532 EUR/USD); they give the overall system cost range on the setup screen.",
+  "_comment": "Illustrative values tuned for gameplay, not engineering data. startupMin: cold start to warm standby (units without syncMin go straight online); syncMin: standby to online; shutdownMin in game minutes; rampPctPerMin and minStablePct in % of unit size; inertiaH in seconds; costPerMWh in NT$ (placeholder marginal cost); standbyCostPerMWh: NT$ per MW of unit size per hour kept warm; co2PerMWh in tonnes; fuel: which fuel-cost group the type counts under; autoRole: what Auto does (follow = adjust output to follow the load; backup = start units when supply is short and stand them down after; hydro = cover shortfalls, pacing the day's water; curtail = run at full output, curtailed only for a surplus nothing else can absorb; storage and demand response have their own rules); unitMW: typical unit size used by the custom mix. capexEURPerKW (capexEURPerKWh and energyLifeYears for battery energy; capexOffshoreEURPerKW for offshore wind) and lifeYears are the technology-data 2030 projections (EUR, 2013 prices) used by the Taiwan PyPSA-Earth model (https://bartonchentw.github.io/pypsa-earth/, data/costs.csv; battery USD converted at 0.7532 EUR/USD); they give the overall system cost range on the setup screen. ammoniaCcgt, geothermal and biomass come from the Taiwan energy model (https://github.com/BartonChenTW/taiwan-energy-model): ammonia turbines take the CCGT investment cost (as in the model) and about NT$5,100/MWh for fuel (ammonia imported at 80 EUR/MWh, Hampp et al. 2023, at the model's 57% efficiency and NT$36.185/EUR); geothermal 4,220 EUR/kW (the model's IRENA 2023 value) and biomass 2,338 EUR/kW (DIW, via PyPSA); biomass CO2 counts as zero (biogenic), as in the model.",
   "nuclear": {
     "capexEURPerKW": 6000, "lifeYears": 45, "fuel": "nuclear", "startupMin": 2880, "shutdownMin": 60,
     "rampPctPerMin": 0.5, "minStablePct": 70, "inertiaH": 6, "costPerMWh": 1000, "co2PerMWh": 0,
@@ -24,11 +24,29 @@
     "standbyCostPerMWh": 150, "co2PerMWh": 0.55, "unitMW": 200, "dispatchable": true, "autoCapable": true,
     "autoRole": "backup"
   },
+  "ammoniaCcgt": {
+    "capexEURPerKW": 800, "lifeYears": 30, "fuel": "other", "startupMin": 90, "syncMin": 30,
+    "shutdownMin": 30, "rampPctPerMin": 4, "minStablePct": 45, "inertiaH": 4, "costPerMWh": 5100,
+    "standbyCostPerMWh": 200, "co2PerMWh": 0, "unitMW": 600, "dispatchable": true, "autoCapable": true,
+    "autoRole": "follow"
+  },
   "oil": {
     "capexEURPerKW": 400, "lifeYears": 30, "fuel": "oil", "startupMin": 20, "syncMin": 10,
     "shutdownMin": 15, "rampPctPerMin": 10, "minStablePct": 30, "inertiaH": 3, "costPerMWh": 6500,
     "standbyCostPerMWh": 150, "co2PerMWh": 0.75, "unitMW": 500, "dispatchable": true, "autoCapable": true,
     "autoRole": "backup"
+  },
+  "geothermal": {
+    "capexEURPerKW": 4220, "lifeYears": 30, "fuel": "other", "startupMin": 240, "syncMin": 30,
+    "shutdownMin": 60, "rampPctPerMin": 2, "minStablePct": 50, "inertiaH": 3, "costPerMWh": 300,
+    "standbyCostPerMWh": 50, "co2PerMWh": 0, "unitMW": 200, "dispatchable": true, "mustRun": true,
+    "autoCapable": true, "autoRole": "follow"
+  },
+  "biomass": {
+    "capexEURPerKW": 2338, "lifeYears": 30, "fuel": "other", "startupMin": 240, "syncMin": 45,
+    "shutdownMin": 60, "rampPctPerMin": 2, "minStablePct": 40, "inertiaH": 4, "costPerMWh": 3000,
+    "standbyCostPerMWh": 150, "co2PerMWh": 0, "unitMW": 100, "dispatchable": true, "autoCapable": true,
+    "autoRole": "follow"
   },
   "hydro": {
     "capexEURPerKW": 2000, "lifeYears": 80, "fuel": "other", "startupMin": 5, "shutdownMin": 5,

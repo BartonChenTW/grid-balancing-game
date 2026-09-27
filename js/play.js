@@ -8,7 +8,7 @@ import { reportCsv, reportHtml } from './report.js';
 import { computeScore, pickLesson } from './score.js';
 import { canTechAction, techAction, techSummary } from './fleet.js';
 import { createState, step } from './sim.js';
-import { formatBigMoneyRange, formatClock, formatDuration, formatEnergy, formatNumber, getLanguage, t, unitName } from './strings.js';
+import { formatBigMoneyRange, formatClock, formatDuration, formatEnergy, formatNumber, getLanguage, labelWithExtras, t, unitName } from './strings.js';
 import { RELEASE_DATE, VERSION } from './version.js';
 import { hasStandby } from './units.js';
 
@@ -402,14 +402,15 @@ export function createPlay({ cfg, onQuit, operator = null }) {
   let fuelRows = [];
 
   function buildFuelRows() {
-    const fleetTypes = [...new Set(world.units.map((u) => u.type))].map((type) => world.types[type]);
+    const fleetTypeIds = [...new Set(world.units.map((u) => u.type))];
+    const fleetTypes = fleetTypeIds.map((type) => world.types[type]);
     const rows = [];
     for (const f of cfg.fuels) {
-      const typesOfFuel = fleetTypes.filter((type) => type.fuel === f);
-      if (typesOfFuel.length === 0) continue;
+      const idsOfFuel = fleetTypeIds.filter((type) => world.types[type].fuel === f);
+      if (idsOfFuel.length === 0) continue;
       // Listed cost of the cheapest type, shown while this fuel is idle.
-      const nominal = Math.min(...typesOfFuel.map((type) => type.costPerMWh)) / 1000;
-      rows.push({ id: f, label: t(`fuel.${f}`), color: `var(${FUEL_COLOR[f]})`, nominal });
+      const nominal = Math.min(...idsOfFuel.map((type) => world.types[type].costPerMWh)) / 1000;
+      rows.push({ id: f, label: labelWithExtras(`fuel.${f}`, idsOfFuel), color: `var(${FUEL_COLOR[f]})`, nominal });
     }
     if (fleetTypes.some((type) => type.variable)) {
       rows.push({ id: 'renewable', label: t('fuel.renewable'), color: 'linear-gradient(90deg, var(--series-solar) 50%, var(--series-wind) 50%)', free: true });

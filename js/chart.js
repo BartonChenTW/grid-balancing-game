@@ -3,7 +3,7 @@
 // Drawn on <canvas> without libraries. Colours come from CSS tokens so light
 // and dark themes both work.
 import { forecastLoad, forecastVariable } from './sim.js';
-import { formatClock, formatNumber, t } from './strings.js';
+import { formatClock, formatNumber, labelWithExtras, t } from './strings.js';
 
 const DAY = 1440;
 
@@ -79,13 +79,18 @@ export function createChart({ canvas, freqCanvas, miniCanvas = null, tooltip, le
     buildLegend();
   }
 
+  // Group names for this fleet, e.g. "Gas, ammonia" when it has ammonia turbines.
+  let groupLabels = [];
+
   function buildLegend() {
     legend.replaceChildren();
+    const fleetTypes = new Set(world.units.map((u) => u.type));
+    groupLabels = groups.map((g) => labelWithExtras(`group.${g.id}`, g.types.filter((type) => fleetTypes.has(type))));
     const present = new Set(world.units.map((u) => groupOf[u.type]));
     present.add(otherIndex); // automatic response can appear in any fleet
     groups.forEach((g, i) => {
       if (!present.has(i)) return;
-      legend.append(legendItem('area', `--series-${g.id}`, t(`group.${g.id}`)));
+      legend.append(legendItem('area', `--series-${g.id}`, groupLabels[i]));
     });
     legend.append(legendItem('line', '--text', t('chart.demand')));
     legend.append(legendItem('dash', '--text-2', t('chart.forecast')));
@@ -431,7 +436,7 @@ export function createChart({ canvas, freqCanvas, miniCanvas = null, tooltip, le
       rows.push(row(mw(history.demand[m]), t('chart.demand'), '--text', 'line'));
       for (let gi = groups.length - 1; gi >= 0; gi--) {
         const v = history.groups[gi][m];
-        if (v > 0.5) rows.push(row(mw(v), t(`group.${groups[gi].id}`), `--series-${groups[gi].id}`, 'line'));
+        if (v > 0.5) rows.push(row(mw(v), groupLabels[gi], `--series-${groups[gi].id}`, 'line'));
       }
       if (history.charging[m] > 0.5) rows.push(row(mw(history.demand[m] + history.charging[m]), t('chart.charging'), '--series-storage', 'line'));
       rows.push(row(t('chart.hz', { v: formatNumber(history.freq[m], 2) }), t('chart.freqTitle')));

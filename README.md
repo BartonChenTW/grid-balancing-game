@@ -68,9 +68,10 @@ Every game on a Taiwan fleet is ranked, on any difficulty, and can post a score 
 | Installed capacity by source (2016, 2025) | Official | Energy Administration, 發電裝置容量年資料, [data.gov.tw/dataset/16480](https://data.gov.tw/dataset/16480) |
 | Grid storage target, demand growth | Official outlook | MOEA, 全國電力資源供需報告, [data.gov.tw/dataset/16437](https://data.gov.tw/dataset/16437) |
 | 2050 renewable share (60–70%) | Official target, to verify | NDC, 臺灣2050淨零排放路徑, [ncsd.ndc.gov.tw](https://ncsd.ndc.gov.tw/Fore/nsdn/about0/2050Path) |
+| 2050 fleet: capacity by technology | Model result | [Taiwan energy model](https://github.com/BartonChenTW/taiwan-energy-model), main 2050 run (official options, all imports, no new nuclear); batteries use the official 5.5 GW target |
 | Build costs, lifetimes, cost uncertainty | Model assumptions | [Taiwan PyPSA-Earth model](https://bartonchentw.github.io/pypsa-earth/): technology-data 2030 projections |
 | Daily demand shapes, solar and wind profiles | **Placeholder** | Hand-drawn in [tools/make-days.js](tools/make-days.js), scaled to the real peaks |
-| Unit dynamics, fuel costs, storage sizes, the 2050 fleet | **Illustrative** | Chosen for gameplay |
+| Unit dynamics, fuel costs, storage energy, 2050 peak load | **Illustrative** | Chosen for gameplay; the 2050 peak is estimated from the model's annual generation |
 
 The annual figures were compiled in [BartonChenTW/pypsa-earth (pypsa-taiwan-dev)](https://github.com/BartonChenTW/pypsa-earth/tree/pypsa-taiwan-dev), `docs/data/taiwan_timeseries.csv`, which records the source of every value. Each scenario file in [data/scenarios/](data/scenarios/) has `dataStatus`, `dataNotes` and `sources` fields, and the setup screen shows them under "About the data".
 

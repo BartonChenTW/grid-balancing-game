@@ -17,8 +17,8 @@
 
 最有價值的貢獻是**真實資料**。
 
-- **每日曲線**（`data/days.json`，由 `tools/make-days.js` 產生）目前是示意資料。典型日（夏季與冬季的平日和週末、農曆春節、颱風天）的台電 10 分鐘系統負載、太陽光電與風力實測資料可以取代它們。曲線長度可以是任何能整除 1440 的數字（24、48、96、144…）。`load` 是當日尖峰的比例，`peakRatio` 是當日尖峰佔年度尖峰的比例，`solar` 與 `wind` 是整體容量因數（0–1）。
-- **情境**（`data/scenarios/*.json`）描述一個電源組合：每種技術一筆，包含總容量 `maxMW` 與相同機組的數量（`count`；儲能、水力、需量反應、太陽光電與風力都是一個單位）。風力可以提供 `offshoreShare`（離岸比例，0–1）供成本估算使用。請把檔案 id 加到 `data/scenarios/index.json`，並誠實填寫 `dataStatus`（`partial`、`placeholder`）、`dataNotes` 與 `sources`。
+- **每日曲線**（`data/days.json`，由 `tools/make-days.js` 產生）：負載曲線目前是示意資料，典型日（夏季與冬季的平日和週末、農曆春節、颱風天）的台電 10 分鐘系統負載實測資料可以取代它們。太陽光電與風力依台灣能源模型氣象年份中的真實日期（`data/weather-days.json`；要更換日期，請修改 `tools/import-weather.js`，以模型的 checkout 執行它，再執行 `tools/make-days.js`）。某一天也可以限電（`rationingPct`），並把某種燃料限制在其容量的一定比例（`fuelLimits`，例如液化天然氣封鎖日的 `{ "gas": 0.22 }`）。曲線長度可以是任何能整除 1440 的數字（24、48、96、144…）。`load` 是當日尖峰的比例，`peakRatio` 是當日尖峰佔年度尖峰的比例，`solar` 與 `wind` 是整體容量因數（0–1）。
+- **情境**（`data/scenarios/*.json`）描述一個電源組合：每種技術一筆，包含總容量 `maxMW` 與相同機組的數量（`count`；儲能、水力、需量反應、太陽光電與風力都是一個單位）。也可以用 `unitList` 取代 `count`，列出真實機組的名稱與容量，例如 `[{ "name": "Taichung 1", "nameZh": "台中 1號機", "mw": 550 }]`；各機組容量加總必須等於 `maxMW`。風力可以提供 `offshoreShare`（離岸比例，0–1）供成本估算使用。請把檔案 id 加到 `data/scenarios/index.json`，並誠實填寫 `dataStatus`（`partial`、`placeholder`）、`dataNotes` 與 `sources`。
 
   ```json
   { "type": "coal", "maxMW": 19309, "count": 27 }
@@ -35,7 +35,7 @@
 情境與日期都可以列出事件：
 
 ```json
-{ "timeMin": 547, "type": "trip", "unitType": "coal", "lossMW": 2600, "note": "hsinta2022" }
+{ "timeMin": 547, "type": "trip", "unitType": "gasCcgt", "namePrefix": "Hsinta", "lossMW": 2600, "note": "hsinta2022" }
 { "timeMin": 600, "type": "trip", "unitType": "gasCcgt", "units": 2 }
 { "timeMin": 780, "type": "clouds", "factor": 0.45, "durationMin": 50 }
 { "timeMin": 840, "type": "windCutout", "factor": 0.1, "durationMin": 480, "rampMin": 120, "warnMin": 240 }
@@ -43,7 +43,7 @@
 { "timeMin": 960, "type": "demandSurge", "factor": 1.05, "durationMin": 120 }
 ```
 
-跳機（trip）會讓 `unitType` 中運轉中的機組解聯：`units` 部，或直到失去 `lossMW` 為止。`note` 對應 `js/strings.js` 中的 `note.<id>` 文字。`warnMin` 會提前預告事件並把它納入預測。隨機意外的設定在 `js/config.js`（`events.random`）。
+跳機（trip）會讓 `unitType` 中運轉中的機組解聯：`units` 部，或直到失去 `lossMW` 為止。使用真實機組時，`namePrefix` 可以把跳機限定在某一座電廠。`note` 對應 `js/strings.js` 中的 `note.<id>` 文字。`warnMin` 會提前預告事件並把它納入預測。隨機意外的設定在 `js/config.js`（`events.random`）。
 
 ## 翻譯
 

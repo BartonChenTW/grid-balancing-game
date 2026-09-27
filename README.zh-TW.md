@@ -30,7 +30,7 @@
 ### 遊戲流程
 
 1. **認識遊戲：** 遊戲在講什麼、你的目標是什麼。
-2. **設定電網：** 選擇電源組合（台灣 2016、2025、2030、2050，或自訂組合）、選擇哪一天（夏季或冬季、平日或週末、農曆春節、颱風天）與難度。選項包括：意外事件（無、固定發生、隨機發生、兩者都有）、輔助，以及自動模式：儲能與需量反應、跟隨負載（核能、燃煤、燃氣）、水力／太陽光電／風力、尖峰機組備援，或「全部自動」。
+2. **設定電網：** 選擇電源組合（台灣 2016、2025、2030、2050，或自訂組合）、選擇哪一天（夏季或冬季、平日或週末、農曆春節、颱風天、液化天然氣封鎖）與難度。選項包括：意外事件（無、固定發生、隨機發生、兩者都有）、輔助，以及自動模式：儲能與需量反應、跟隨負載（核能、燃煤、燃氣）、水力／太陽光電／風力、尖峰機組備援，或「全部自動」。
 3. **開始調度：** 跟著負載預測走。慢機組需要好幾小時才能起動；快速機組、儲能與需量反應負責應付起伏。讓頻率一直留在綠色區間，直到午夜。
 
 設定畫面也會以**範圍**顯示電源組合的**整體系統成本**：建造這些電廠的資本支出，依各技術壽命以可調整的折現率（5–10%）均化為每年成本（新台幣／年）。建造成本、壽命與 ±30% 的不確定性取自[台灣 PyPSA-Earth 電力模型](https://bartonchentw.github.io/pypsa-earth/)（technology-data 2030 年推估）；計算方式見 [js/economics.js](js/economics.js)。
@@ -65,14 +65,17 @@
 | 項目 | 狀態 | 來源 |
 |---|---|---|
 | 年度尖峰負載（2016、2025） | 官方 | 台電，歷年尖峰負載及備用容量率，[data.gov.tw/dataset/8307](https://data.gov.tw/dataset/8307) |
-| 各類電源裝置容量（2016、2025） | 官方 | 能源署，發電裝置容量年資料，[data.gov.tw/dataset/16480](https://data.gov.tw/dataset/16480) |
+| 各類電源裝置容量（2016） | 官方 | 能源署，發電裝置容量年資料，[data.gov.tw/dataset/16480](https://data.gov.tw/dataset/16480) |
+| 2025 年電源組合：每部燃煤、燃氣、燃油機組的名稱與容量；水力、儲能、光電與風電 | 官方 | 台電各機組發電量，[data.gov.tw/dataset/8931](https://data.gov.tw/dataset/8931)（2026-09-24 快照，經由[台灣能源模型](https://github.com/BartonChenTW/taiwan-energy-model)整理） |
 | 電網儲能目標、用電成長 | 官方展望 | 經濟部，全國電力資源供需報告，[data.gov.tw/dataset/16437](https://data.gov.tw/dataset/16437) |
 | 2050 年再生能源占比（60–70%） | 官方目標，待查證 | 國發會，臺灣2050淨零排放路徑，[ncsd.ndc.gov.tw](https://ncsd.ndc.gov.tw/Fore/nsdn/about0/2050Path) |
 | 2030 年各類電源裝置容量 | 官方規劃 | [台灣能源模型](https://github.com/BartonChenTW/taiwan-energy-model)，依經濟部 113 年度全國電力資源供需報告規劃的 2030 年電源組合；電池採用官方 5.5 GW 目標 |
 | 每 MWh 燃料成本與碳排（核能、燃煤、燃氣、燃油、生質能） | 模型假設 | [台灣能源模型](https://github.com/BartonChenTW/taiwan-energy-model)：2030 年燃料價格、效率與變動運維成本 |
 | 2050 年各類電源裝置容量 | 模型結果 | [台灣能源模型](https://github.com/BartonChenTW/taiwan-energy-model) 2050 年主要情境（官方選項、各類燃料皆可進口、不新建核能）；電池採用官方 5.5 GW 目標 |
 | 建造成本、壽命、成本不確定性 | 模型假設 | [台灣 PyPSA-Earth 電力模型](https://bartonchentw.github.io/pypsa-earth/)：technology-data 2030 年推估 |
-| 每日負載曲線、太陽光電與風力曲線 | **示意資料** | 在 [tools/make-days.js](tools/make-days.js) 手繪，並依真實尖峰縮放 |
+| 每日日照與風力 | 模型氣象資料 | 每種日子取台灣能源模型 2013 與 2018 氣象年份中的一個真實日期（[data/weather-days.json](data/weather-days.json)，由 [tools/import-weather.js](tools/import-weather.js) 產生） |
+| 液化天然氣封鎖日 | 模型結果 | 模型 30 天液化天然氣中斷情境（能源安全分析）：燃氣約只剩五分之一的容量可用，40% 的需求需要限電 |
+| 每日負載曲線 | **示意資料** | 在 [tools/make-days.js](tools/make-days.js) 手繪，並依真實尖峰縮放 |
 | 機組動態、水力與需量反應成本、儲能容量（MWh）、2050 年尖峰負載 | **示意值** | 為了遊戲性而設定；2050 年尖峰由模型的年發電量估算 |
 
 年度數字整理自 [BartonChenTW/pypsa-earth（pypsa-taiwan-dev）](https://github.com/BartonChenTW/pypsa-earth/tree/pypsa-taiwan-dev) 的 `docs/data/taiwan_timeseries.csv`，其中記錄了每個數值的來源。[data/scenarios/](data/scenarios/) 中每個情境檔都有 `dataStatus`、`dataNotes` 與 `sources` 欄位，設定畫面的「關於資料」會顯示這些內容。

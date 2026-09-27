@@ -67,6 +67,7 @@ export function createUnit(spec, type) {
   else if (spec.initialState === 'standby' && hasStandby(type)) status = 'standby';
   const unit = {
     name: spec.name,
+    ...(spec.nameZh ? { nameZh: spec.nameZh } : {}),
     type: spec.type,
     tech: spec.tech ?? 0,
     maxMW: spec.maxMW,
@@ -76,7 +77,8 @@ export function createUnit(spec, type) {
     stopTo: null,
     setpointMW: 0,
     outputMW: 0,
-    lockedOut: false,
+    lockedOut: Boolean(spec.noFuel), // no fuel today (fuel shortage) or cannot restart
+    noFuel: Boolean(spec.noFuel),
     starts: 0,
     auto: Boolean(spec.auto && type.autoCapable),
   };

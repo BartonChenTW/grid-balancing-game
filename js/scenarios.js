@@ -51,6 +51,7 @@ function checkEvents(problems, where, events, techTypes) {
       if (techTypes && !techTypes.includes(e.unitType)) problems.push(`${at}.unitType "${e.unitType}" is not a technology in this scenario`);
       if (e.units !== undefined && (!Number.isInteger(e.units) || e.units < 1)) problems.push(`${at}.units must be a whole number ≥ 1`);
       if (e.lossMW !== undefined && (!isNum(e.lossMW) || e.lossMW <= 0)) problems.push(`${at}.lossMW must be a positive number`);
+      if (e.namePrefix !== undefined && (typeof e.namePrefix !== 'string' || !e.namePrefix)) problems.push(`${at}.namePrefix must be a non-empty string`);
     }
     const maxFactor = e.type === 'demandSurge' ? 2 : 1;
     if (e.factor !== undefined && (!isNum(e.factor) || e.factor < 0 || e.factor > maxFactor)) problems.push(`${at}.factor must be between 0 and ${maxFactor}`);
@@ -88,6 +89,24 @@ export function singleUnitType(type) {
   return Boolean(type.storage || type.energyLimited || type.activationLimited || type.variable);
 }
 
+/**
+ * Optional list of real units, e.g. [{ "name": "Taichung 1", "nameZh": "台中 1", "mw": 550 }]:
+ * units get these names and sizes instead of `count` equal units.
+ */
+function checkUnitList(problems, at, u, type) {
+  const list = u.unitList;
+  if (!Array.isArray(list) || list.length === 0) return problems.push(`${at}.unitList must be a non-empty array`);
+  if (type && singleUnitType(type)) problems.push(`${at}.unitList is not allowed for ${u.type}`);
+  list.forEach((x, k) => {
+    if (!isObj(x) || typeof x.name !== 'string' || !x.name) problems.push(`${at}.unitList[${k}].name must be a non-empty string`);
+    else if (x.nameZh !== undefined && (typeof x.nameZh !== 'string' || !x.nameZh)) problems.push(`${at}.unitList[${k}].nameZh must be a non-empty string`);
+    if (!isObj(x) || !isNum(x.mw) || x.mw <= 0) problems.push(`${at}.unitList[${k}].mw must be a positive number`);
+  });
+  if (u.count !== undefined && u.count !== list.length) problems.push(`${at}.count must equal the length of unitList (${list.length})`);
+  const sum = list.reduce((a, x) => a + (isNum(x?.mw) ? x.mw : 0), 0);
+  if (isNum(u.maxMW) && Math.abs(sum - u.maxMW) > 1) problems.push(`${at}.maxMW (${u.maxMW}) must equal the sum of unitList (${Math.round(sum)})`);
+}
+
 export function validateScenario(s, types) {
   const problems = [];
   if (!isObj(s)) return ['must be a JSON object'];
@@ -108,6 +127,7 @@ export function validateScenario(s, types) {
     if (u.name !== undefined && (typeof u.name !== 'string' || !u.name)) problems.push(`${at}.name must be a non-empty string`);
     if (!isNum(u.maxMW) || u.maxMW <= 0) problems.push(`${at}.maxMW must be a positive number (total capacity of the technology)`);
     if (u.count !== undefined && (!Number.isInteger(u.count) || u.count < 1)) problems.push(`${at}.count must be a whole number ≥ 1`);
+    if (u.unitList !== undefined) checkUnitList(problems, at, u, type);
     if (type && singleUnitType(type) && (u.count ?? 1) !== 1) problems.push(`${at}.count must be 1 for ${u.type}`);
     if (u.initialState !== undefined && !UNIT_STATES.includes(u.initialState)) problems.push(`${at}.initialState must be one of ${UNIT_STATES.join(', ')}`);
     if (u.initialPct !== undefined && (!isNum(u.initialPct) || u.initialPct < 0 || u.initialPct > 100)) problems.push(`${at}.initialPct must be between 0 and 100`);
@@ -116,6 +136,34 @@ export function validateScenario(s, types) {
   });
   checkEvents(problems, 'events', s.events, [...seen]);
   return problems;
+}
+
+/** The day's peak demand for a fleet: its annual peak × the day's ratio, less planned rationing. */
+export function dayPeakMW(scenario, day) {
+  return scenario.peakLoadMW * day.peakRatio * (1 - (day.rationingPct ?? 0) / 100);
+}
+
+/**
+ * A fuel shortage (e.g. an LNG blockade): only a share of each limited fuel's
+ * capacity has fuel. Units are given fuel in fleet order until the share is
+ * used up (at least one unit); the rest are marked `noFuel` and cannot start.
+ */
+export function applyFuelLimits(units, types, limits = {}) {
+  const out = units.map((u) => ({ ...u }));
+  for (const [fuel, share] of Object.entries(limits)) {
+    const idx = out.map((u, i) => i).filter((i) => types[out[i].type].fuel === fuel && !types[out[i].type].storage);
+    const allowanceMW = share * idx.reduce((sum, i) => sum + out[i].maxMW, 0);
+    let fuelledMW = 0;
+    for (const i of idx) {
+      if (share > 0 && (fuelledMW === 0 || fuelledMW + out[i].maxMW <= allowanceMW)) {
+        fuelledMW += out[i].maxMW;
+      } else {
+        out[i].noFuel = true;
+        out[i].initialState = 'offline';
+      }
+    }
+  }
+  return out;
 }
 
 export function validateDays(d) {
@@ -129,6 +177,16 @@ export function validateDays(d) {
     else if (ids.has(day.id)) problems.push(`${at}.id "${day.id}" is used twice`);
     ids.add(day.id);
     if (!isNum(day.peakRatio) || day.peakRatio <= 0 || day.peakRatio > 1.5) problems.push(`${at}.peakRatio must be a number in (0, 1.5]`);
+    if (day.rationingPct !== undefined && (!isNum(day.rationingPct) || day.rationingPct < 0 || day.rationingPct > 60)) problems.push(`${at}.rationingPct must be between 0 and 60`);
+    if (day.fuelLimits !== undefined) {
+      if (!isObj(day.fuelLimits)) problems.push(`${at}.fuelLimits must be an object such as { "gas": 0.2 }`);
+      else {
+        for (const [fuel, share] of Object.entries(day.fuelLimits)) {
+          if (!defaultConfig.fuels.includes(fuel)) problems.push(`${at}.fuelLimits.${fuel}: fuel must be one of ${defaultConfig.fuels.join(', ')}`);
+          if (!isNum(share) || share < 0 || share > 1) problems.push(`${at}.fuelLimits.${fuel} must be a share between 0 and 1`);
+        }
+      }
+    }
     checkProfile(problems, `${at}.load`, day.load, 1.5);
     checkProfile(problems, `${at}.solar`, day.solar, 1);
     checkProfile(problems, `${at}.wind`, day.wind, 1);
@@ -220,7 +278,8 @@ export function expandUnits(scenario, types, options = {}) {
   const techs = [];
   scenario.units.forEach((entry, techIndex) => {
     const type = types[entry.type];
-    const count = entry.count ?? 1;
+    const list = entry.unitList;
+    const count = list ? list.length : entry.count ?? 1;
     const name = entry.name ?? entry.type;
     let auto = false;
     if (type.storage || type.activationLimited) auto = Boolean(options.autoStorage);
@@ -228,16 +287,23 @@ export function expandUnits(scenario, types, options = {}) {
     else if (type.autoRole === 'follow') auto = Boolean(options.autoFollow);
     else if (type.autoRole === 'hydro' || type.autoRole === 'curtail') auto = Boolean(options.autoRenewables);
     const first = units.length;
+    const { unitList, ...spec } = entry;
     for (let k = 0; k < count; k++) {
+      const real = unitList?.[k];
       units.push({
-        ...entry,
-        name: count > 1 ? `${name} ${k + 1}` : name,
+        ...spec,
+        name: real ? real.name : count > 1 ? `${name} ${k + 1}` : name,
+        ...(real?.nameZh ? { nameZh: real.nameZh } : {}),
         tech: techIndex,
-        maxMW: entry.maxMW / count,
+        maxMW: real ? real.mw : entry.maxMW / count,
         auto,
       });
     }
-    techs.push({ type: entry.type, name, count, maxMW: entry.maxMW, first, last: units.length - 1 });
+    const sizes = units.slice(first).map((u) => u.maxMW);
+    techs.push({
+      type: entry.type, name, count, maxMW: entry.maxMW, first, last: units.length - 1,
+      named: Boolean(unitList), minUnitMW: Math.min(...sizes), maxUnitMW: Math.max(...sizes),
+    });
   });
   return { units, techs };
 }
@@ -274,6 +340,19 @@ export function autoCommit(world, cfg = defaultConfig) {
     online.push(i);
     capacity += units[i].maxMW;
   }
+  // Still short with every flexible unit committed (a calm night in a fleet with
+  // little firm capacity): call in warm reserves the fleet keeps on standby, cheapest first.
+  if (capacity < net) {
+    const reserves = units
+      .map((u, i) => i)
+      .filter((i) => units[i].initialState === 'standby' && !units[i].noFuel && types[units[i].type].dispatchable && !types[units[i].type].storage)
+      .sort((a, b) => types[units[a].type].costPerMWh - types[units[b].type].costPerMWh);
+    for (const i of reserves) {
+      if (capacity >= net) break;
+      units[i].initialState = 'online';
+      capacity += units[i].maxMW;
+    }
+  }
   const minOf = (i) => (units[i].maxMW * types[units[i].type].minStablePct) / 100;
   while (online.length > 1 && online.reduce((sum, i) => sum + minOf(i), 0) > net) online.pop();
   const onlineSet = new Set(online);
@@ -303,7 +382,9 @@ export function buildWorld({ scenario, day, types, difficulty = 'normal', assist
     autoFollow: autoFollow ?? diff.autoFollow,
     autoRenewables: autoRenewables ?? diff.autoRenewables,
   };
-  const { units, techs } = expandUnits(scenario, types, options);
+  const expanded = expandUnits(scenario, types, options);
+  const units = applyFuelLimits(expanded.units, types, day.fuelLimits);
+  const { techs } = expanded;
   const world = {
     scenarioId: scenario.id,
     dayId: day.id,
@@ -313,7 +394,9 @@ export function buildWorld({ scenario, day, types, difficulty = 'normal', assist
     techs,
     techNames: techs.map((t) => t.name),
     annualPeakMW: scenario.peakLoadMW,
-    peakLoadMW: scenario.peakLoadMW * day.peakRatio,
+    peakLoadMW: dayPeakMW(scenario, day),
+    rationingPct: day.rationingPct ?? 0,
+    fuelLimits: day.fuelLimits ?? {},
     profiles: { load: normalise(day.load), solar: day.solar, wind: day.wind },
     events: scheduled ? [...(day.events ?? []), ...(scenario.events ?? [])] : [],
     accidents: mode,

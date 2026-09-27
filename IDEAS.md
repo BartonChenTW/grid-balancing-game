@@ -1,6 +1,6 @@
 # Ideas
 
-Possible next steps for the game, collected on 2026-09-27 after the Taiwan energy model data went in (v0.7.0). Nothing here is planned or promised. Size: **S** is a few hours, **M** a day or two, **L** more.
+Possible next steps for the game, collected on 2026-09-27 after the Taiwan energy model data went in (v0.7.0). Nothing here is planned or promised, except where marked done. Size: **S** is a few hours, **M** a day or two, **L** more.
 
 Several ideas use data from the [Taiwan energy model](https://github.com/BartonChenTW/taiwan-energy-model) (TEM).
 
@@ -8,9 +8,9 @@ Several ideas use data from the [Taiwan energy model](https://github.com/BartonC
 
 | # | Idea | Size | Notes |
 |---|---|---|---|
-| 1 | **Real power stations for 2025** | S | Use Taipower's unit list (`data/official/taipower_units_20260924.json`, with `data/taipower_plant_mapping.csv`) so cards show actual plants and unit sizes (Taichung, Hsinta, Talin…) instead of illustrative counts. |
-| 2 | **Weather-based days** | M | Set each day's wind and sun from TEM's full-year runs for 2013 and 2018 weather (`docs/data/cases/*.json`, demand and availability in 4-hour steps). Too coarse for the minute-by-minute shape, but it can set how windy or sunny each day type is. Note that the timestamps are UTC. |
-| 3 | **Fuel blockade scenario** | M | An LNG shortage event or day from TEM's energy-security runs (`docs/data/security/cases/`). Gas units get a fuel budget that runs out, which shows Taiwan's import dependence. |
+| 1 | **Real power stations for 2025** (done in 0.8.0) | S | Use Taipower's unit list (`data/official/taipower_units_20260924.json`, with `data/taipower_plant_mapping.csv`) so cards show actual plants and unit sizes (Taichung, Hsinta, Talin…) instead of illustrative counts. |
+| 2 | **Weather-based days** (done in 0.8.0) | M | Set each day's wind and sun from TEM's full-year runs for 2013 and 2018 weather (`docs/data/cases/*.json`, demand and availability in 4-hour steps). Too coarse for the minute-by-minute shape, but it can set how windy or sunny each day type is. Note that the timestamps are UTC. |
+| 3 | **Fuel blockade scenario** (done in 0.8.0: the LNG blockade day) | M | An LNG shortage event or day from TEM's energy-security runs (`docs/data/security/cases/`). Gas units get a fuel budget that runs out, which shows Taiwan's import dependence. |
 | 4 | **Taiwan 2034** | S | TEM also has the planned 2034 fleet (`data/fleet/custom_powerplants_tw2034.csv`). It fills the gap between 2030 and 2050. |
 | 5 | **2050 choices** | M | Let players pick between TEM's 2050 runs (`docs/data/sector_pathway.json`): official options, the official power mix (gas with carbon capture), high import prices, or nuclear allowed. Each gets its own leaderboard board. |
 
@@ -40,4 +40,4 @@ Several ideas use data from the [Taiwan energy model](https://github.com/BartonC
 
 ## Suggested order
 
-For impact against effort: **6** (carbon price) first, because it fixes coal-first play in 2050 and ties the game to TEM's economics; then **1** (real power stations) and **12** (daily challenge).
+For impact against effort: **6** (carbon price) first, because it fixes coal-first play in 2050 and ties the game to TEM's economics; then **12** (daily challenge). A new finding from 0.8.0 for **5** and **7**: with real July weather, the 2050 fleet only just gets through a calm summer evening with 5.5 GW of batteries (on the calmest July day of 2018 it blacks out); about 10 GW would be needed.

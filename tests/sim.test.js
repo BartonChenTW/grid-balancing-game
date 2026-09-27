@@ -158,6 +158,20 @@ test('a trip event disconnects units of one technology and is logged', () => {
   assert.equal(state.eventLog[0].type, 'trip');
   assert.equal(state.eventLog[0].units, 2);
   assert.ok(state.eventLog[0].lostMW >= 500);
+  // The log names which units tripped, so real units can be named.
+  const names = state.eventLog[0].unitIds.map((i) => state.units[i].name).sort();
+  assert.deepEqual(names, offline.map((u) => u.name).sort());
+});
+
+test('a trip can target one plant by name', () => {
+  const world = makeWorld(
+    [coal(400, { name: 'Hsintao 1', tech: 0 }), coal(400, { name: 'Hsinta 1', tech: 0 }), coal(400, { name: 'Hsinta 2', tech: 0 }), gas(1000)],
+    { loadMW: 1500, events: [{ timeMin: 5, type: 'trip', unitType: 'coal', namePrefix: 'Hsinta', lossMW: 1000 }] },
+  );
+  const state = run(createState(world, sandbox), world, 5, sandbox);
+  const tripped = state.eventLog[0].unitIds.map((i) => state.units[i].name).sort();
+  assert.deepEqual(tripped, ['Hsinta 1', 'Hsinta 2']);
+  assert.equal(state.units.find((u) => u.name === 'Hsintao 1').status, 'online', 'whole words only');
 });
 
 test('a demand surge raises demand while it lasts', () => {

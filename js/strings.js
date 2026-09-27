@@ -98,7 +98,7 @@ const en = {
   'data.placeholder': 'Projection',
   'data.custom': 'Your numbers',
   'setup.fleetFacts': 'Annual peak {peak} · solar + wind {re}',
-  'data.daysNote': 'Daily demand shapes are placeholders scaled to the real annual peak.',
+  'data.daysNote': 'Daily demand shapes are placeholders scaled to the real annual peak. Each day\'s sun and wind follow a real date from the Taiwan energy model\'s weather years (for example 24 July 2018).',
 
   'difficulty.easy': 'Easy',
   'difficulty.easy.hint': 'Assist on, no surprises.',
@@ -185,6 +185,7 @@ const en = {
   'unit.status.online': 'Online',
   'unit.status.stopping': 'Stopping',
   'unit.fleet': '{count} units × {size} MW',
+  'unit.fleetRange': '{count} units, {min}–{max} MW each',
   'unit.fleetStatus': '{online}/{count} online',
   'unit.fleetTarget': 'target {setpoint} · online {online} MW',
   'unit.pending': '{n} starting, next online in {time}',
@@ -206,6 +207,7 @@ const en = {
   'unit.startsIn': 'Online in {time}',
   'unit.startupTakes': 'Start-up takes {time}',
   'unit.lockedOut': 'Cannot restart today',
+  'unit.noFuel': '{n} without fuel today',
   'unit.stopping': 'Ramping down to shut off',
   'unit.storageType': '{type} · storage efficiency {pct}%',
   'unit.lost': 'lost {energy} today',
@@ -243,6 +245,7 @@ const en = {
 
   // ---- Events
   'event.trip': '{n} × {tech} tripped! {mw} MW lost in an instant.',
+  'event.tripNamed': '{names} tripped! {mw} MW lost in an instant.',
   'event.windLull': 'The wind suddenly drops: wind output falls.',
   'event.demandSurge': 'Demand surges above the forecast.',
   'event.clouds': 'Clouds roll over the west coast: solar output drops.',
@@ -378,6 +381,11 @@ export function unitName(name, type) {
   if (lang === 'en') return name;
   const suffix = name.match(/\s([A-Z0-9])$/);
   return suffix ? `${t(`unitType.${type}`)} ${suffix[1]}` : t(`unitType.${type}`);
+}
+
+/** A real unit's name in the current language (Chinese when the data gives one). */
+export function localName(unit) {
+  return lang === 'zh-TW' && unit.nameZh ? unit.nameZh : unit.name;
 }
 
 export function has(key) {

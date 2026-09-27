@@ -93,10 +93,11 @@ Made by **Barton Chen**.
 ## Development
 
 ```sh
-npm test                           # 85 tests: units, simulation, auto modes, data, scoring, costs
-node tools/balance-report.js       # the scripted operator plays every scenario × day
-node tools/balance-report.js hard  # …on Hard
+npm start                          # play locally at http://localhost:8000 (?demo lets the autopilot play)
+npm test                           # all tests: units, simulation, auto modes, data, scoring, costs, replay, leaderboard
+node tools/balance-report.js       # the scripted operator plays every scenario × day (also: easy, hard)
 node tools/make-days.js            # regenerate data/days.json
+node tools/import-weather.js <taiwan-energy-model checkout>   # re-import the real weather of each day
 ```
 
 No build step, no dependencies, no trackers. Plain HTML, CSS and JavaScript modules.
@@ -120,12 +121,16 @@ js/config.js          every tunable number
 js/strings.js         all UI text (English) and language switching
 js/strings-zh-TW.js   繁體中文 text
 js/version.js         version and release date shown in the header
-data/                 unit types, day types, Taiwan scenarios
-tools/                dev server, day generator, autopilot, balance report
+js/replay.js          records and replays a day's moves (for the leaderboard)
+js/leaderboard.js     leaderboard client
+js/report.js          downloadable end-of-day report and CSV
+data/                 unit types, day types and their real weather, Taiwan scenarios
+leaderboard/          Cloudflare Worker and database for the leaderboard (DEPLOY.md)
+tools/                dev server, day and weather generators, autopilot, balance report, score verifier
 tests/                node --test suites
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) ([繁體中文](CONTRIBUTING.zh-TW.md)) to add data, translate or release.
+See [CONTRIBUTING.md](CONTRIBUTING.md) ([繁體中文](CONTRIBUTING.zh-TW.md)) to add data, translate or release, and [IDEAS.md](IDEAS.md) for possible next steps. Contributions are welcome in English or 中文.
 
 ## License
 

@@ -93,10 +93,11 @@
 ## 開發
 
 ```sh
-npm test                           # 85 項測試：機組、模擬、自動模式、資料、計分、成本
-node tools/balance-report.js       # 腳本調度員玩過每個情境 × 每一天
-node tools/balance-report.js hard  # …困難模式
+npm start                          # 在本機遊玩 http://localhost:8000（加上 ?demo 讓自動調度員遊玩）
+npm test                           # 全部測試：機組、模擬、自動模式、資料、計分、成本、重播、排行榜
+node tools/balance-report.js       # 腳本調度員玩過每個情境 × 每一天（也可加 easy、hard）
 node tools/make-days.js            # 重新產生 data/days.json
+node tools/import-weather.js <taiwan-energy-model checkout>   # 重新匯入每一天的真實天氣
 ```
 
 不需要建置步驟、沒有相依套件、沒有追蹤器。只用 HTML、CSS 與 JavaScript 模組。
@@ -120,12 +121,16 @@ js/config.js          所有可調整的數字
 js/strings.js         所有介面文字（英文）與語言切換
 js/strings-zh-TW.js   繁體中文文字
 js/version.js         頁首顯示的版本與發布日期
-data/                 機組類型、日期類型、台灣情境
-tools/                開發伺服器、日期產生器、自動調度員、平衡報告
+js/replay.js          記錄並重播一天的操作（供排行榜使用）
+js/leaderboard.js     排行榜用戶端
+js/report.js          可下載的每日報告與 CSV
+data/                 機組類型、日期類型及其真實天氣、台灣情境
+leaderboard/          排行榜的 Cloudflare Worker 與資料庫（DEPLOY.md）
+tools/                開發伺服器、日期與天氣產生器、自動調度員、平衡報告、分數驗證
 tests/                node --test 測試
 ```
 
-新增資料、翻譯或發布新版本，請見 [CONTRIBUTING.zh-TW.md](CONTRIBUTING.zh-TW.md)（[English](CONTRIBUTING.md)）。
+新增資料、翻譯或發布新版本，請見 [CONTRIBUTING.zh-TW.md](CONTRIBUTING.zh-TW.md)（[English](CONTRIBUTING.md)）；可能的下一步請見 [IDEAS.md](IDEAS.md)。歡迎用中文或英文參與貢獻。
 
 ## 授權
 

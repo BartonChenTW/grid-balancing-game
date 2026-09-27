@@ -4,6 +4,13 @@
 
 Thanks for helping! This project is for learning, so clarity beats cleverness. Questions or ideas: [open an issue](https://github.com/BartonChenTW/grid-balancing-game/issues/new/choose) (English or 中文) or email [barton.chen.energy@gmail.com](mailto:barton.chen.energy@gmail.com).
 
+## Where to start
+
+- **Pick an idea.** [IDEAS.md](IDEAS.md) lists possible next steps with a size (S/M/L) and pointers to the data. Open an issue first for anything M or larger, so we can agree on the approach.
+- **Report a bug or share feedback** with the [issue forms](https://github.com/BartonChenTW/grid-balancing-game/issues/new/choose).
+- **How a change goes in:** fork the repository (or make a branch), make the change, run the checks below, and open a pull request against `main`. The pull request template has a short checklist, and CI runs `npm test` and the balance report on every push. When a pull request is merged into `main`, GitHub Pages publishes the game.
+- **AI assistants** (Claude Code and others): [AGENTS.md](AGENTS.md) sums up these rules and the commands.
+
 ## Ground rules
 
 - **No build step and no dependencies.** Plain HTML, CSS and JavaScript modules that run as static files.
@@ -11,7 +18,8 @@ Thanks for helping! This project is for learning, so clarity beats cleverness. Q
 - **No magic numbers.** Tunable values go in `js/config.js` or `data/unit-types.json`.
 - **All UI text goes in `js/strings.js`** and its translation `js/strings-zh-TW.js`, so both languages stay complete.
 - **Explain approximations.** When you simplify the physics, add a comment saying what is approximate.
-- Run `npm test` before sending a change. If you touch data or tuning, also run `node tools/balance-report.js` (and `hard`) and check that every scenario × day is still winnable.
+- Run `npm test` before sending a change. If you touch data or tuning, also run `node tools/balance-report.js` (and `easy`, `hard`) and check that every scenario × day is still winnable.
+- **Leaderboard scores are replayed.** A submitted score is checked by replaying its moves with the game version it was played on, so any change to how a day plays (simulation, data, scoring) needs a new version number (see Release). The Worker in `leaderboard/` needs redeploying only when `worker.js`, `validate.js` or `schema.sql` change; see [leaderboard/DEPLOY.md](leaderboard/DEPLOY.md).
 
 ## Add or improve data
 
@@ -45,6 +53,18 @@ Scenarios and days can list events:
 
 A trip disconnects online units of `unitType`: `units` of them, or as many as needed to lose `lossMW`. With real units, `namePrefix` limits it to one plant. `note` refers to a `note.<id>` string in `js/strings.js`. `warnMin` announces the event in advance and adds it to the forecast. Random accidents are configured in `js/config.js` (`events.random`).
 
+## Data from the Taiwan energy model
+
+Several data sets come from the [Taiwan energy model](https://github.com/BartonChenTW/taiwan-energy-model) (TEM), which records the source of every value:
+
+| Game data | From TEM | How to update |
+|---|---|---|
+| Taiwan 2025 units (`unitList` in `data/scenarios/taiwan-2025.json`) | Taipower's unit list, `data/official/taipower_units_*.json`, and `data/taipower_plant_mapping.csv` | Edit the unit list by hand from a newer snapshot; sizes must add up to `maxMW`. |
+| Taiwan 2030 and 2050 fleets | `data/fleet/custom_powerplants_tw2030.csv`, `docs/data/sector_pathway.json` (run `official_imp`) | Edit the scenario files; keep `dataNotes` in step. |
+| Solar and wind of each day (`data/weather-days.json`) | Full-year weather runs, `docs/data/cases/*.json` | `node tools/import-weather.js <TEM checkout>`, then `node tools/make-days.js`. |
+| LNG blockade day | Energy-security runs, `docs/data/security/cases/` | Edit the day in `tools/make-days.js`. |
+| Fuel costs, CO₂, build costs | `docs/data/model_data.json` (cost rows) | Edit `data/unit-types.json`; the `_comment` there explains each value. |
+
 ## Translate
 
 Each language is a table with the same keys as the `en` table in `js/strings.js`; see `js/strings-zh-TW.js`. Add a file, import it in `strings.js`, and register it in `TABLES` and `LANGUAGES`. Scenario and day text can be translated with `scenario.<id>.name`, `scenario.<id>.description`, `scenario.<id>.dataNotes`, `day.<id>.name` and `day.<id>.description`. Missing keys fall back to English.
@@ -53,9 +73,9 @@ Repository documents come in pairs: `README.md` / `README.zh-TW.md`, `CONTRIBUTI
 
 ## Release
 
-1. Bump the version in `js/version.js` (with the release date) and `package.json`.
+1. Bump the version in `js/version.js` (with the release date) and `package.json`: minor (0.X.0) for new features or data, patch (0.0.X) for fixes.
 2. Add an entry at the top of `CHANGELOG.md` and `CHANGELOG.zh-TW.md` (`## X.Y.Z — YYYY-MM-DD`); `npm test` checks that they agree.
-3. Commit, tag and push: `git tag -a vX.Y.Z -m "…"` then `git push origin main --tags`.
+3. Merge the pull request into `main`. The *tag release* workflow then tags the commit `vX.Y.Z` (the leaderboard verifier uses these tags, and falls back to the history of `main` if one is missing).
 4. Check that the live site shows the new version in its header. If GitHub Pages did not rebuild, run `gh api -X POST repos/BartonChenTW/grid-balancing-game/pages/builds`.
 
 ## Test locally

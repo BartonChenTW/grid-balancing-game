@@ -5,25 +5,99 @@
   "year": 2025,
   "peakLoadMW": 40752,
   "dataStatus": "partial",
-  "dataNotes": "Annual peak load and installed capacity by source are official 2025 figures; battery size uses the 2025 grid-storage target. Unit counts and sizes, storage energy, DSM size and all unit parameters are illustrative. Biomass, waste and geothermal (0.8 GW) are left out. Wind is taken as about 1 GW onshore (the MOEA onshore figure) and the rest offshore.",
+  "dataNotes": "The fleet is Taipower's system, the one its peak load is measured on: every coal, gas and oil unit with its real name and size, and the capacity of hydro, pumped hydro, batteries, solar and wind, from Taipower's unit list (snapshot 2026-09-24, as used by the Taiwan energy model). New gas units still in trial operation in 2026 (Taichung new CC 1–2, Hsinta new CC 2–3) are left out, and so are industrial self-generation, purchased cogeneration (0.6 GW), geothermal and biomass (0.07 GW) and the outlying islands. Annual peak load is the official 2025 figure. Storage energy, demand-response size and all unit parameters are illustrative.",
   "sources": [
     { "what": "Peak load 2025", "url": "https://data.gov.tw/dataset/8307" },
-    { "what": "Installed capacity by source 2025", "url": "https://data.gov.tw/dataset/16480" },
-    { "what": "Grid storage target", "url": "https://data.gov.tw/dataset/16437" }
+    { "what": "Taipower unit list (real-time generation by unit, snapshot 2026-09-24)", "url": "https://data.gov.tw/dataset/8931" },
+    { "what": "Taiwan energy model: unit list and plant names", "url": "https://github.com/BartonChenTW/taiwan-energy-model/tree/main/data" }
   ],
   "units": [
-    { "type": "coal", "maxMW": 19309, "count": 27 },
-    { "type": "gasCcgt", "maxMW": 20847, "count": 35 },
-    { "type": "gasOcgt", "maxMW": 2000, "count": 10 },
-    { "type": "oil", "maxMW": 2229, "count": 4 },
-    { "type": "hydro", "maxMW": 2124, "energyMWh": 15000, "initialState": "online", "initialPct": 10 },
+    {
+      "type": "coal", "maxMW": 11358.6,
+      "unitList": [
+        { "name": "Linkou 1", "nameZh": "林口 1號機", "mw": 800 },
+        { "name": "Linkou 2", "nameZh": "林口 2號機", "mw": 800 },
+        { "name": "Linkou 3", "nameZh": "林口 3號機", "mw": 800 },
+        { "name": "Taichung 1", "nameZh": "台中 1號機", "mw": 550 },
+        { "name": "Taichung 2", "nameZh": "台中 2號機", "mw": 550 },
+        { "name": "Taichung 3", "nameZh": "台中 3號機", "mw": 550 },
+        { "name": "Taichung 4", "nameZh": "台中 4號機", "mw": 550 },
+        { "name": "Taichung 5", "nameZh": "台中 5號機", "mw": 550 },
+        { "name": "Taichung 6", "nameZh": "台中 6號機", "mw": 550 },
+        { "name": "Taichung 7", "nameZh": "台中 7號機", "mw": 550 },
+        { "name": "Taichung 8", "nameZh": "台中 8號機", "mw": 550 },
+        { "name": "Taichung 9", "nameZh": "台中 9號機", "mw": 550 },
+        { "name": "Taichung 10", "nameZh": "台中 10號機", "mw": 550 },
+        { "name": "Hsinta 4", "nameZh": "興達 4號機", "mw": 550 },
+        { "name": "Talin 1", "nameZh": "大林 1號機", "mw": 800 },
+        { "name": "Talin 2", "nameZh": "大林 2號機", "mw": 800 },
+        { "name": "Ho-Ping 1", "nameZh": "和平 1號機", "mw": 648.6 },
+        { "name": "Ho-Ping 2", "nameZh": "和平 2號機", "mw": 660 }
+      ]
+    },
+    {
+      "type": "gasCcgt", "maxMW": 22127.1,
+      "unitList": [
+        { "name": "Tatan 1", "nameZh": "大潭CC 1號機", "mw": 742.7 },
+        { "name": "Tatan 2", "nameZh": "大潭CC 2號機", "mw": 742.7 },
+        { "name": "Tatan 3", "nameZh": "大潭CC 3號機", "mw": 724.7 },
+        { "name": "Tatan 4", "nameZh": "大潭CC 4號機", "mw": 724.7 },
+        { "name": "Tatan 5", "nameZh": "大潭CC 5號機", "mw": 724.7 },
+        { "name": "Tatan 6", "nameZh": "大潭CC 6號機", "mw": 724.7 },
+        { "name": "Tatan 7", "nameZh": "大潭CC 7號機", "mw": 913.1 },
+        { "name": "Tatan 8", "nameZh": "大潭CC 8號機", "mw": 1123.6 },
+        { "name": "Tatan 9", "nameZh": "大潭CC 9號機", "mw": 1123.6 },
+        { "name": "Tunghsiao 1", "nameZh": "通霄CC 1號機", "mw": 892.6 },
+        { "name": "Tunghsiao 2", "nameZh": "通霄CC 2號機", "mw": 892.6 },
+        { "name": "Tunghsiao 3", "nameZh": "通霄CC 3號機", "mw": 892.6 },
+        { "name": "Tunghsiao 6", "nameZh": "通霄CC 6號機", "mw": 321.2 },
+        { "name": "Hsinta new CC 1", "nameZh": "興達新CC 1號機", "mw": 1300 },
+        { "name": "Hsinta CC 1", "nameZh": "興達CC 1號機", "mw": 445.2 },
+        { "name": "Hsinta CC 2", "nameZh": "興達CC 2號機", "mw": 445.2 },
+        { "name": "Hsinta CC 3", "nameZh": "興達CC 3號機", "mw": 445.2 },
+        { "name": "Hsinta CC 4", "nameZh": "興達CC 4號機", "mw": 445.2 },
+        { "name": "Hsinta CC 5", "nameZh": "興達CC 5號機", "mw": 445.2 },
+        { "name": "Nanpu 1", "nameZh": "南部CC 1號機", "mw": 288.8 },
+        { "name": "Nanpu 2", "nameZh": "南部CC 2號機", "mw": 288.8 },
+        { "name": "Nanpu 3", "nameZh": "南部CC 3號機", "mw": 288.8 },
+        { "name": "Nanpu 4", "nameZh": "南部CC 4號機", "mw": 251.4 },
+        { "name": "Talin 6", "nameZh": "大林 6號機", "mw": 550 },
+        { "name": "Hai-Fu 1", "nameZh": "海湖 1號機", "mw": 450 },
+        { "name": "Hai-Fu 2", "nameZh": "海湖 2號機", "mw": 450 },
+        { "name": "Hsintao 1", "nameZh": "新桃 1號機", "mw": 630 },
+        { "name": "Kuokuang 1", "nameZh": "國光 1號機", "mw": 480 },
+        { "name": "Star Buck 1", "nameZh": "星彰 1號機", "mw": 506.9 },
+        { "name": "Star Yuan 1", "nameZh": "星元 1號機", "mw": 549.1 },
+        { "name": "Chiahui 1", "nameZh": "嘉惠 1號機", "mw": 700 },
+        { "name": "Chiahui 2", "nameZh": "嘉惠 2號機", "mw": 510 },
+        { "name": "Fong Der 1", "nameZh": "豐德 1號機", "mw": 506.9 },
+        { "name": "Fong Der 2", "nameZh": "豐德 2號機", "mw": 506.9 },
+        { "name": "Fong Der 3", "nameZh": "豐德 3號機", "mw": 1100 }
+      ]
+    },
+    {
+      "type": "gasOcgt", "maxMW": 180.9,
+      "unitList": [
+        { "name": "Tunghsiao GT 9", "nameZh": "通霄GT 9號機", "mw": 180.9 }
+      ]
+    },
+    {
+      "type": "oil", "maxMW": 1280,
+      "unitList": [
+        { "name": "Hsieh-ho 3", "nameZh": "協和 3號機", "mw": 500 },
+        { "name": "Hsieh-ho 4", "nameZh": "協和 4號機", "mw": 500 },
+        { "name": "Taichung GT 1–2", "nameZh": "台中氣渦輪 1、2號機", "mw": 140 },
+        { "name": "Taichung GT 3–4", "nameZh": "台中氣渦輪 3、4號機", "mw": 140 }
+      ]
+    },
+    { "type": "hydro", "maxMW": 2116, "energyMWh": 15000, "initialState": "online", "initialPct": 10 },
     { "type": "pumpedHydro", "maxMW": 2602, "energyMWh": 15600, "initialSocPct": 60 },
-    { "type": "battery", "maxMW": 1000, "energyMWh": 2000, "initialSocPct": 50 },
+    { "type": "battery", "maxMW": 853, "energyMWh": 1706, "initialSocPct": 50 },
     { "type": "dsm", "maxMW": 1500, "maxActivationMin": 240 },
-    { "type": "solar", "maxMW": 15474 },
-    { "type": "wind", "maxMW": 4517, "offshoreShare": 0.78 }
+    { "type": "solar", "maxMW": 15392 },
+    { "type": "wind", "maxMW": 4187, "offshoreShare": 0.81 }
   ],
   "events": [
-    { "timeMin": 547, "type": "trip", "unitType": "coal", "lossMW": 2600, "note": "hsinta2022" }
+    { "timeMin": 547, "type": "trip", "unitType": "gasCcgt", "namePrefix": "Hsinta", "lossMW": 2600, "note": "hsinta2022" }
   ]
 }

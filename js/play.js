@@ -8,7 +8,7 @@ import { reportCsv, reportHtml } from './report.js';
 import { computeScore, pickLesson } from './score.js';
 import { canTechAction, techAction, techSummary } from './fleet.js';
 import { createState, step } from './sim.js';
-import { formatBigMoneyRange, formatClock, formatDuration, formatEnergy, formatNumber, getLanguage, labelWithExtras, t, unitName } from './strings.js';
+import { formatBigMoneyRange, formatClock, formatDuration, formatEnergy, formatNumber, getLanguage, labelWithExtras, localName, t, unitName } from './strings.js';
 import { RELEASE_DATE, VERSION } from './version.js';
 import { hasStandby } from './units.js';
 
@@ -197,9 +197,12 @@ export function createPlay({ cfg, onQuit, operator = null }) {
       const status = el('span', 'status');
       head.append(status);
 
-      let sub = multi
-        ? t('unit.fleet', { count: info.count, size: formatNumber(info.maxMW / info.count) })
-        : t(`unitType.${info.type}`);
+      let sub = t(`unitType.${info.type}`);
+      if (multi && Math.round(info.minUnitMW) !== Math.round(info.maxUnitMW)) {
+        sub = t('unit.fleetRange', { count: info.count, min: formatNumber(info.minUnitMW), max: formatNumber(info.maxUnitMW) });
+      } else if (multi) {
+        sub = t('unit.fleet', { count: info.count, size: formatNumber(info.maxMW / info.count) });
+      }
       if (type.storage) sub = t('unit.storageType', { type: sub, pct: formatNumber((type.efficiency ?? 1) * 100) });
       const typeLine = el('div', 'unit-type', sub);
       const output = el('div', 'unit-output');
@@ -308,6 +311,7 @@ export function createPlay({ cfg, onQuit, operator = null }) {
     if (s.starting > 0) parts.push(t('unit.pending', { n: s.starting, time: formatDuration(s.nextOnlineMin ?? 0) }));
     if (s.warming > 0) parts.push(t('unit.warmingUp', { n: s.warming }));
     if (s.stopping > 0) parts.push(t('unit.stoppingN', { n: s.stopping }));
+    if (s.noFuel > 0) parts.push(t('unit.noFuel', { n: s.noFuel }));
     if (s.lockedOut > 0) parts.push(t('unit.lockedOut'));
     if (type.variable) parts.push(t('unit.variable', { available: formatNumber(s.availableMW), curtailed: formatNumber(s.curtailedMW) }));
     else if (type.storage) {
@@ -491,8 +495,15 @@ export function createPlay({ cfg, onQuit, operator = null }) {
 
   function describeEvent(e) {
     switch (e.type) {
-      case 'trip':
-        return [t('event.trip', { n: e.units, tech: techLabel(e.tech), mw: formatNumber(e.lostMW) }), e.note ? t(`note.${e.note}`) : ''];
+      case 'trip': {
+        const note = e.note ? t(`note.${e.note}`) : '';
+        // Real units (a fleet with a unitList) are named: "Taichung 5 tripped!"
+        if (world.techs[e.tech]?.named && e.unitIds) {
+          const names = e.unitIds.map((i) => localName(state.units[i])).join(t('labelExtra.sep'));
+          return [t('event.tripNamed', { names, mw: formatNumber(e.lostMW) }), note];
+        }
+        return [t('event.trip', { n: e.units, tech: techLabel(e.tech), mw: formatNumber(e.lostMW) }), note];
+      }
       case 'clouds':
         return [t('event.clouds'), ''];
       case 'windCutout':

@@ -513,20 +513,23 @@ function applyEvent(state, world, event, cfg) {
       const candidates = s.units
         .map((u, i) => i)
         .filter((i) => s.units[i].type === unitType && s.units[i].status === 'online')
+        // Real units can be targeted by plant, e.g. "Hsinta" for Hsinta CC 1 and Hsinta new CC 1
+        // (whole words only, so not Hsintao 1).
+        .filter((i) => !event.namePrefix || s.units[i].name === event.namePrefix || s.units[i].name.startsWith(`${event.namePrefix} `))
         .sort((a, b) => s.units[b].outputMW - s.units[a].outputMW);
       const maxUnits = event.units ?? (event.lossMW ? Infinity : 1);
       const units = s.units.slice();
       let lostMW = 0;
-      let count = 0;
+      const tripped = [];
       for (const i of candidates) {
-        if (count >= maxUnits || (event.lossMW && lostMW >= event.lossMW)) break;
+        if (tripped.length >= maxUnits || (event.lossMW && lostMW >= event.lossMW)) break;
         lostMW += units[i].outputMW;
         units[i] = tripUnit(units[i]);
-        count++;
+        tripped.push(i);
       }
-      if (count === 0) return s;
+      if (tripped.length === 0) return s;
       const tech = units[candidates[0]].tech;
-      return { ...s, units, eventLog: [...s.eventLog, { ...log, unitType, tech, units: count, lostMW }] };
+      return { ...s, units, eventLog: [...s.eventLog, { ...log, unitType, tech, units: tripped.length, unitIds: tripped, lostMW }] };
     }
     case 'clouds':
     case 'windCutout':

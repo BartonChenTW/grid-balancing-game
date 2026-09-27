@@ -94,7 +94,7 @@ export const zhTW = {
   'data.partial': '真實總量',
   'data.placeholder': '推估情境',
   'data.custom': '你的數字',
-  'data.daysNote': '每日負載曲線為示意資料，並依真實年度尖峰縮放。',
+  'data.daysNote': '每日負載曲線為示意資料，並依真實年度尖峰縮放。每一天的日照與風力依台灣能源模型氣象年份中的真實日期（例如 2018 年 7 月 24 日）。',
 
   'difficulty.easy': '簡單',
   'difficulty.easy.hint': '開啟輔助，沒有意外事件。',
@@ -179,6 +179,7 @@ export const zhTW = {
   'unit.status.online': '運轉中',
   'unit.status.stopping': '停機中',
   'unit.fleet': '{count} 部機組 × {size} MW',
+  'unit.fleetRange': '{count} 部機組，每部 {min}–{max} MW',
   'unit.fleetStatus': '運轉 {online}/{count}',
   'unit.fleetTarget': '目標 {setpoint} · 併聯容量 {online} MW',
   'unit.pending': '{n} 部起動中，下一部 {time}後併聯',
@@ -200,6 +201,7 @@ export const zhTW = {
   'unit.startsIn': '{time}後併聯',
   'unit.startupTakes': '起動需要 {time}',
   'unit.lockedOut': '今天無法再起動',
+  'unit.noFuel': '{n} 部今天沒有燃料',
   'unit.stopping': '正在降載停機',
   'unit.storageType': '{type} · 儲能效率 {pct}%',
   'unit.lost': '今日損失 {energy}',
@@ -236,6 +238,7 @@ export const zhTW = {
   'time.m': '{m} 分鐘',
 
   'event.trip': '{tech} 有 {n} 部機組跳機！瞬間失去 {mw} MW。',
+  'event.tripNamed': '{names} 跳機！瞬間失去 {mw} MW。',
   'event.windLull': '風突然減弱，風力出力下降。',
   'event.demandSurge': '負載突然高於預測。',
   'event.clouds': '雲層飄過西部沿海，太陽光電出力下降。',
@@ -349,4 +352,6 @@ export const zhTW = {
   'day.lunarNewYear.description': '工廠放年假，負載降到全年最低，但陽光和風照樣發電。',
   'day.typhoon.name': '颱風天',
   'day.typhoon.description': '八月的颱風假。辦公室停班，雲層遮住陽光，午後風勢強到風機必須停機保護。',
+  'day.lngBlockade.name': '液化天然氣封鎖',
+  'day.lngBlockade.description': '封鎖第 5 天：液化天然氣船無法抵達台灣。只有約五分之一的燃氣機組有燃料，政府以輪流停電限電 40%。燃煤、燃油、儲能、太陽與風力必須撐過七月的一天。',
 };

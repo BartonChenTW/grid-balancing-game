@@ -1,5 +1,7 @@
 # PLAN.md — "Follow the Load" grid balancing game
 
+> **Historical.** This is the original design plan and its decisions up to 2026-09-24. For how the game works now, see [README.md](README.md), [CONTRIBUTING.md](CONTRIBUTING.md), [CHANGELOG.md](CHANGELOG.md) and, for what could come next, [IDEAS.md](IDEAS.md).
+
 ## 1. Goal
 A browser game where the player is a grid operator. Demand and renewables change
 over a day; the player keeps supply = demand by dispatching units with realistic

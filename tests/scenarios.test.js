@@ -10,12 +10,14 @@ import {
   buildWorld,
   capacityByType,
   customScenario,
+  dayPeakMW,
   loadGameData,
   validateDays,
   validateScenario,
 } from '../js/scenarios.js';
 import { playDay } from '../tools/balance-report.js';
 import { TYPES, quiet } from './helpers.js';
+import { canStart } from '../js/units.js';
 
 const readJson = async (path) => JSON.parse(readFileSync(new URL(`../${path}`, import.meta.url), 'utf8'));
 
@@ -146,12 +148,42 @@ test('scenarios expand into individual units, one technology per card', async ()
   const world = buildWorld({ scenario: scenarios[1], day: days[0], types });
   const coal = scenarios[1].units.find((u) => u.type === 'coal');
   const coalUnits = world.units.filter((u) => u.type === 'coal');
-  assert.equal(coalUnits.length, coal.count);
+  const count = coal.unitList?.length ?? coal.count;
+  assert.equal(coalUnits.length, count);
   assert.ok(Math.abs(coalUnits.reduce((sum, u) => sum + u.maxMW, 0) - coal.maxMW) < 1e-6);
   assert.equal(world.techs.length, scenarios[1].units.length);
   // Auto-commitment brings only part of the coal fleet online at midnight.
   const online = coalUnits.filter((u) => u.initialState === 'online').length;
-  assert.ok(online > 0 && online <= coal.count);
+  assert.ok(online > 0 && online <= count);
+});
+
+test('a unitList gives real units their names and sizes', async () => {
+  const { types, scenarios, days } = await loadGameData(readJson);
+  const scenario = scenarios.find((x) => x.id === 'taiwan-2025');
+  const world = buildWorld({ scenario, day: days[0], types });
+  const coal = world.units.filter((u) => u.type === 'coal');
+  assert.equal(coal[0].name, 'Linkou 1');
+  assert.equal(coal[0].nameZh, '林口 1號機');
+  assert.equal(coal[0].maxMW, 800);
+  assert.ok(!('unitList' in coal[0]), 'the list itself is not copied into every unit');
+  const tech = world.techs[coal[0].tech];
+  assert.equal(tech.named, true);
+  assert.equal(tech.minUnitMW, 550);
+  assert.equal(tech.maxUnitMW, 800);
+});
+
+test('unitList is checked: sizes must add up to maxMW, and names are required', () => {
+  const base = { id: 'x', name: 'X', peakLoadMW: 1000 };
+  const ok = { ...base, units: [{ type: 'coal', maxMW: 1300, unitList: [{ name: 'A 1', mw: 800 }, { name: 'A 2', mw: 500 }] }] };
+  assert.deepEqual(validateScenario(ok, TYPES), []);
+  const sum = validateScenario({ ...base, units: [{ ...ok.units[0], maxMW: 2000 }] }, TYPES);
+  assert.match(sum.join('\n'), /must equal the sum of unitList/);
+  const nameless = validateScenario({ ...base, units: [{ type: 'coal', maxMW: 800, unitList: [{ mw: 800 }] }] }, TYPES);
+  assert.match(nameless.join('\n'), /unitList\[0\]\.name/);
+  const count = validateScenario({ ...base, units: [{ ...ok.units[0], count: 3 }] }, TYPES);
+  assert.match(count.join('\n'), /count must equal the length of unitList/);
+  const solar = validateScenario({ ...base, units: [{ type: 'solar', maxMW: 800, unitList: [{ name: 'S', mw: 800 }] }] }, TYPES);
+  assert.match(solar.join('\n'), /unitList is not allowed for solar/);
 });
 
 test('custom mix uses typical unit sizes', () => {
@@ -172,4 +204,49 @@ test('switching scenarios gives an independent fresh state', async () => {
   assert.notDeepEqual(a.units.map((u) => u.name), b.units.map((u) => u.name));
   assert.equal(b.minute, 0);
   assert.equal(b.eventLog.length, 0);
+});
+
+test('LNG blockade day: only a share of the gas fleet has fuel, and demand is rationed', async () => {
+  const { types, scenarios, days } = await loadGameData(readJson);
+  const day = days.find((d) => d.id === 'lngBlockade');
+  const scenario = scenarios.find((x) => x.id === 'taiwan-2025');
+  const world = buildWorld({ scenario, day, types, difficulty: 'normal' });
+  const gas = world.units.filter((u) => types[u.type].fuel === 'gas');
+  const fuelled = gas.filter((u) => !u.noFuel).reduce((sum, u) => sum + u.maxMW, 0);
+  const total = gas.reduce((sum, u) => sum + u.maxMW, 0);
+  assert.ok(fuelled > 0 && fuelled <= day.fuelLimits.gas * total + 1e-6, `${fuelled} of ${total} MW has fuel`);
+  assert.ok(gas.filter((u) => u.noFuel).every((u) => u.initialState === 'offline'));
+  // Units without fuel cannot be started.
+  const state = createState(world, quiet);
+  const dry = state.units.find((u) => u.noFuel);
+  assert.equal(canStart(dry, types[dry.type]), false);
+  // Rationing lowers the day's peak.
+  assert.ok(Math.abs(world.peakLoadMW - scenario.peakLoadMW * day.peakRatio * 0.6) < 1e-6);
+  assert.equal(dayPeakMW(scenario, day), world.peakLoadMW);
+  // Other fuels are untouched.
+  assert.ok(world.units.filter((u) => u.type === 'coal').every((u) => !u.noFuel));
+});
+
+test('day fuel limits and rationing are checked', () => {
+  const base = { id: 'd', peakRatio: 1, load: [1], solar: [0], wind: [0] };
+  assert.deepEqual(validateDays({ days: [{ ...base, rationingPct: 40, fuelLimits: { gas: 0.2 } }] }), []);
+  assert.match(validateDays({ days: [{ ...base, rationingPct: 90 }] }).join('\n'), /rationingPct/);
+  assert.match(validateDays({ days: [{ ...base, fuelLimits: { lng: 0.2 } }] }).join('\n'), /fuel must be one of/);
+  assert.match(validateDays({ days: [{ ...base, fuelLimits: { gas: 2 } }] }).join('\n'), /share between 0 and 1/);
+});
+
+test('days follow the real weather they were built from', async () => {
+  const { days } = await loadGameData(readJson);
+  const weather = (await readJson('data/weather-days.json')).days;
+  const mean = (xs) => xs.reduce((a, b) => a + b, 0) / xs.length;
+  for (const day of days) {
+    const w = weather[day.id];
+    assert.ok(w, `${day.id} has a real date`);
+    assert.equal(day.weather.date, w.date);
+    // The solar curve carries the real day's solar energy (within rounding).
+    assert.ok(Math.abs(mean(day.solar) - mean(w.solar)) < 0.005, day.id);
+    // Wind follows the windows' mix of 80% offshore and 20% onshore.
+    const windows = w.offwind.map((off, k) => 0.8 * off + 0.2 * w.onwind[k]);
+    assert.ok(Math.abs(day.wind[2] - windows[0]) < 0.002, `${day.id} wind at 02:00`);
+  }
 });

@@ -30,7 +30,7 @@ The game is in **English and Traditional Chinese (繁體中文)**: it follows th
 ### How a game works
 
 1. **About:** what the game is about and your goal.
-2. **Set up:** pick a fleet (Taiwan 2016, 2025, 2030, 2050, or your own mix), a day (summer or winter, weekday or weekend, Lunar New Year, typhoon) and a difficulty. Options: accidents (none, scheduled, random, or both), the assist, and Auto modes for storage and demand response, load following (nuclear, coal, gas), hydro/solar/wind, and backup peakers, or “Auto for everything”.
+2. **Set up:** pick a fleet (Taiwan 2016, 2025, 2030, 2050, or your own mix), a day (summer or winter, weekday or weekend, Lunar New Year, typhoon, LNG blockade) and a difficulty. Options: accidents (none, scheduled, random, or both), the assist, and Auto modes for storage and demand response, load following (nuclear, coal, gas), hydro/solar/wind, and backup peakers, or “Auto for everything”.
 3. **Operate:** follow the demand forecast. Slow plants need hours to start; fast ones, storage and demand response handle the swings. Keep frequency in the green band until midnight.
 
 The setup screen also shows the fleet’s **overall system cost** as a range: the capital cost of building it, levelised over each technology’s lifetime at a discount rate you can change (5–10%), in NT$ per year. Build costs, lifetimes and the ±30% uncertainty come from the [Taiwan PyPSA-Earth model](https://bartonchentw.github.io/pypsa-earth/) (technology-data 2030 projections); see [js/economics.js](js/economics.js).
@@ -65,14 +65,17 @@ Every game on a Taiwan fleet is ranked, on any difficulty, and can post a score 
 | What | Status | Source |
 |---|---|---|
 | Annual peak load (2016, 2025) | Official | Taipower, 歷年尖峰負載及備用容量率, [data.gov.tw/dataset/8307](https://data.gov.tw/dataset/8307) |
-| Installed capacity by source (2016, 2025) | Official | Energy Administration, 發電裝置容量年資料, [data.gov.tw/dataset/16480](https://data.gov.tw/dataset/16480) |
+| Installed capacity by source (2016) | Official | Energy Administration, 發電裝置容量年資料, [data.gov.tw/dataset/16480](https://data.gov.tw/dataset/16480) |
+| 2025 fleet: every coal, gas and oil unit with its name and size; hydro, storage, solar and wind | Official | Taipower unit list, [data.gov.tw/dataset/8931](https://data.gov.tw/dataset/8931) (snapshot 2026-09-24, via the [Taiwan energy model](https://github.com/BartonChenTW/taiwan-energy-model)) |
 | Grid storage target, demand growth | Official outlook | MOEA, 全國電力資源供需報告, [data.gov.tw/dataset/16437](https://data.gov.tw/dataset/16437) |
 | 2050 renewable share (60–70%) | Official target, to verify | NDC, 臺灣2050淨零排放路徑, [ncsd.ndc.gov.tw](https://ncsd.ndc.gov.tw/Fore/nsdn/about0/2050Path) |
 | 2030 fleet: capacity by technology | Official plan | [Taiwan energy model](https://github.com/BartonChenTW/taiwan-energy-model), planned 2030 fleet from the MOEA supply-demand report 113年度; batteries use the official 5.5 GW target |
 | Fuel cost and CO₂ per MWh (nuclear, coal, gas, oil, biomass) | Model assumptions | [Taiwan energy model](https://github.com/BartonChenTW/taiwan-energy-model): 2030 fuel prices, efficiencies and variable O&M |
 | 2050 fleet: capacity by technology | Model result | [Taiwan energy model](https://github.com/BartonChenTW/taiwan-energy-model), main 2050 run (official options, all imports, no new nuclear); batteries use the official 5.5 GW target |
 | Build costs, lifetimes, cost uncertainty | Model assumptions | [Taiwan PyPSA-Earth model](https://bartonchentw.github.io/pypsa-earth/): technology-data 2030 projections |
-| Daily demand shapes, solar and wind profiles | **Placeholder** | Hand-drawn in [tools/make-days.js](tools/make-days.js), scaled to the real peaks |
+| Daily solar and wind | Model weather | A real date per day type from the Taiwan energy model's 2013 and 2018 weather years ([data/weather-days.json](data/weather-days.json), made by [tools/import-weather.js](tools/import-weather.js)) |
+| LNG blockade day | Model result | The model's 30-day LNG cut (energy-security runs): gas at about a fifth of capacity, 40% of demand rationed |
+| Daily demand shapes | **Placeholder** | Hand-drawn in [tools/make-days.js](tools/make-days.js), scaled to the real peaks |
 | Unit dynamics, hydro and demand-response costs, storage energy, 2050 peak load | **Illustrative** | Chosen for gameplay; the 2050 peak is estimated from the model's annual generation |
 
 The annual figures were compiled in [BartonChenTW/pypsa-earth (pypsa-taiwan-dev)](https://github.com/BartonChenTW/pypsa-earth/tree/pypsa-taiwan-dev), `docs/data/taiwan_timeseries.csv`, which records the source of every value. Each scenario file in [data/scenarios/](data/scenarios/) has `dataStatus`, `dataNotes` and `sources` fields, and the setup screen shows them under "About the data".
@@ -90,10 +93,11 @@ Made by **Barton Chen**.
 ## Development
 
 ```sh
-npm test                           # 85 tests: units, simulation, auto modes, data, scoring, costs
-node tools/balance-report.js       # the scripted operator plays every scenario × day
-node tools/balance-report.js hard  # …on Hard
+npm start                          # play locally at http://localhost:8000 (?demo lets the autopilot play)
+npm test                           # all tests: units, simulation, auto modes, data, scoring, costs, replay, leaderboard
+node tools/balance-report.js       # the scripted operator plays every scenario × day (also: easy, hard)
 node tools/make-days.js            # regenerate data/days.json
+node tools/import-weather.js <taiwan-energy-model checkout>   # re-import the real weather of each day
 ```
 
 No build step, no dependencies, no trackers. Plain HTML, CSS and JavaScript modules.
@@ -117,12 +121,16 @@ js/config.js          every tunable number
 js/strings.js         all UI text (English) and language switching
 js/strings-zh-TW.js   繁體中文 text
 js/version.js         version and release date shown in the header
-data/                 unit types, day types, Taiwan scenarios
-tools/                dev server, day generator, autopilot, balance report
+js/replay.js          records and replays a day's moves (for the leaderboard)
+js/leaderboard.js     leaderboard client
+js/report.js          downloadable end-of-day report and CSV
+data/                 unit types, day types and their real weather, Taiwan scenarios
+leaderboard/          Cloudflare Worker and database for the leaderboard (DEPLOY.md)
+tools/                dev server, day and weather generators, autopilot, balance report, score verifier
 tests/                node --test suites
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) ([繁體中文](CONTRIBUTING.zh-TW.md)) to add data, translate or release.
+See [CONTRIBUTING.md](CONTRIBUTING.md) ([繁體中文](CONTRIBUTING.zh-TW.md)) to add data, translate or release, and [IDEAS.md](IDEAS.md) for possible next steps. Contributions are welcome in English or 中文.
 
 ## License
 

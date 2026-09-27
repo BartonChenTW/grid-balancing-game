@@ -2,7 +2,7 @@
 import { capitalCost } from './economics.js';
 import { fetchTop, leaderboardEnabled, renderBoard } from './leaderboard.js';
 import { isRankedScenario, usesDefaultOptions } from './replay.js';
-import { ACCIDENT_MODES, capacityByType, customScenario } from './scenarios.js';
+import { ACCIDENT_MODES, capacityByType, customScenario, dayPeakMW } from './scenarios.js';
 import { formatBigMoney, formatBigMoneyRange, formatNumber, t, tOr, unitName } from './strings.js';
 
 const STORAGE_KEY = 'ftl.setup.v1';
@@ -249,7 +249,7 @@ export function createSetup({ data, cfg, onStart, onBack }) {
     const firm = total(groups.firm);
     const flex = total(groups.flex);
     const renewable = total(groups.renewable);
-    const peak = scenario.peakLoadMW * day.peakRatio;
+    const peak = dayPeakMW(scenario, day);
     const margin = ((firm + flex - peak) / peak) * 100;
 
     const rows = el('dl', 'summary-rows');

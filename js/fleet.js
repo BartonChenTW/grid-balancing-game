@@ -40,6 +40,7 @@ export function techSummary(state, world, tech) {
     stopping: 0,
     offline: 0,
     lockedOut: 0,
+    noFuel: 0,
     outputMW: 0,
     setpointMW: 0,
     onlineMW: 0, // capacity of units that can produce now
@@ -63,7 +64,8 @@ export function techSummary(state, world, tech) {
     const u = state.units[i];
     s.maxMW += u.maxMW;
     s.outputMW += u.outputMW;
-    if (u.lockedOut) s.lockedOut++;
+    if (u.noFuel) s.noFuel++;
+    else if (u.lockedOut) s.lockedOut++;
     if (u.auto) s.auto = true;
     switch (u.status) {
       case 'online':

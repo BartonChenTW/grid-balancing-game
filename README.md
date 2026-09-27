@@ -30,7 +30,7 @@ The game is in **English and Traditional Chinese (繁體中文)**: it follows th
 ### How a game works
 
 1. **About:** what the game is about and your goal.
-2. **Set up:** pick a fleet (Taiwan 2016, 2025, 2050, or your own mix), a day (summer or winter, weekday or weekend, Lunar New Year, typhoon) and a difficulty. Options: accidents (none, scheduled, random, or both), the assist, and Auto modes for storage and demand response, load following (nuclear, coal, gas), hydro/solar/wind, and backup peakers, or “Auto for everything”.
+2. **Set up:** pick a fleet (Taiwan 2016, 2025, 2030, 2050, or your own mix), a day (summer or winter, weekday or weekend, Lunar New Year, typhoon) and a difficulty. Options: accidents (none, scheduled, random, or both), the assist, and Auto modes for storage and demand response, load following (nuclear, coal, gas), hydro/solar/wind, and backup peakers, or “Auto for everything”.
 3. **Operate:** follow the demand forecast. Slow plants need hours to start; fast ones, storage and demand response handle the swings. Keep frequency in the green band until midnight.
 
 The setup screen also shows the fleet’s **overall system cost** as a range: the capital cost of building it, levelised over each technology’s lifetime at a discount rate you can change (5–10%), in NT$ per year. Build costs, lifetimes and the ±30% uncertainty come from the [Taiwan PyPSA-Earth model](https://bartonchentw.github.io/pypsa-earth/) (technology-data 2030 projections); see [js/economics.js](js/economics.js).
@@ -68,10 +68,12 @@ Every game on a Taiwan fleet is ranked, on any difficulty, and can post a score 
 | Installed capacity by source (2016, 2025) | Official | Energy Administration, 發電裝置容量年資料, [data.gov.tw/dataset/16480](https://data.gov.tw/dataset/16480) |
 | Grid storage target, demand growth | Official outlook | MOEA, 全國電力資源供需報告, [data.gov.tw/dataset/16437](https://data.gov.tw/dataset/16437) |
 | 2050 renewable share (60–70%) | Official target, to verify | NDC, 臺灣2050淨零排放路徑, [ncsd.ndc.gov.tw](https://ncsd.ndc.gov.tw/Fore/nsdn/about0/2050Path) |
+| 2030 fleet: capacity by technology | Official plan | [Taiwan energy model](https://github.com/BartonChenTW/taiwan-energy-model), planned 2030 fleet from the MOEA supply-demand report 113年度; batteries use the official 5.5 GW target |
+| Fuel cost and CO₂ per MWh (nuclear, coal, gas, oil, biomass) | Model assumptions | [Taiwan energy model](https://github.com/BartonChenTW/taiwan-energy-model): 2030 fuel prices, efficiencies and variable O&M |
 | 2050 fleet: capacity by technology | Model result | [Taiwan energy model](https://github.com/BartonChenTW/taiwan-energy-model), main 2050 run (official options, all imports, no new nuclear); batteries use the official 5.5 GW target |
 | Build costs, lifetimes, cost uncertainty | Model assumptions | [Taiwan PyPSA-Earth model](https://bartonchentw.github.io/pypsa-earth/): technology-data 2030 projections |
 | Daily demand shapes, solar and wind profiles | **Placeholder** | Hand-drawn in [tools/make-days.js](tools/make-days.js), scaled to the real peaks |
-| Unit dynamics, fuel costs, storage energy, 2050 peak load | **Illustrative** | Chosen for gameplay; the 2050 peak is estimated from the model's annual generation |
+| Unit dynamics, hydro and demand-response costs, storage energy, 2050 peak load | **Illustrative** | Chosen for gameplay; the 2050 peak is estimated from the model's annual generation |
 
 The annual figures were compiled in [BartonChenTW/pypsa-earth (pypsa-taiwan-dev)](https://github.com/BartonChenTW/pypsa-earth/tree/pypsa-taiwan-dev), `docs/data/taiwan_timeseries.csv`, which records the source of every value. Each scenario file in [data/scenarios/](data/scenarios/) has `dataStatus`, `dataNotes` and `sources` fields, and the setup screen shows them under "About the data".
 

@@ -160,7 +160,9 @@ export const config = {
     weights: { reliability: 0.5, cost: 0.25, carbon: 0.25 },
     warningWeight: 0.5, // reliability: a minute in the warning band counts half
     shedStagePenalty: 2.5, // reliability points lost per load-shedding stage
-    cost: { bestNTDPerKWh: 1.5, worstNTDPerKWh: 4.5 }, // 100 at best, 0 at worst
+    // 100 at best, 0 at worst. Set for the Taiwan model's fuel costs so a careful
+    // operator of Taiwan 2025 scores about 70–90 on cost.
+    cost: { bestNTDPerKWh: 0.85, worstNTDPerKWh: 2.6 },
     carbon: { bestGPerKWh: 0, worstGPerKWh: 900 },
     starThresholds: [600, 750, 850],
   },
@@ -175,7 +177,7 @@ export const config = {
     forecastStepMin: 5, // resolution of forecast lines on the chart
     chartCursorStepMin: 15, // arrow keys move the chart cursor this much
     co2BarMaxGPerKWh: 1000, // full width of the CO₂-intensity bar (coal alone is ~900 g/kWh)
-    costBarMaxNTDPerKWh: 7, // full width of the fuel-cost bar (oil alone is 6.5)
+    costBarMaxNTDPerKWh: 6, // full width of the fuel-cost bar (oil alone is 5.7)
     toastMs: 9000, // how long an event banner stays up (real time)
     logCollapsedCount: 3, // the control-room log shows this many messages until expanded
     // Chart series, stacked bottom to top. Colours are CSS tokens --series-<id>.

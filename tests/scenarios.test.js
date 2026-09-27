@@ -21,7 +21,7 @@ const readJson = async (path) => JSON.parse(readFileSync(new URL(`../${path}`, i
 
 test('all shipped data files are valid', async () => {
   const data = await loadGameData(readJson);
-  assert.equal(data.scenarios.length, 3);
+  assert.equal(data.scenarios.length, 4);
   assert.ok(data.days.length >= 6);
 });
 

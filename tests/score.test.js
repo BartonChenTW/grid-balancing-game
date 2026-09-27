@@ -5,7 +5,8 @@ import { config } from '../js/config.js';
 import { computeScore, pickLesson } from '../js/score.js';
 
 // 1,000 MWh generated; cost and CO₂ set per test through NT$/kWh and g/kWh.
-function finished(stats, extra = {}, { ntdPerKWh = 1.5, gPerKWh = 0 } = {}) {
+const { bestNTDPerKWh, worstNTDPerKWh } = config.score.cost;
+function finished(stats, extra = {}, { ntdPerKWh = bestNTDPerKWh, gPerKWh = 0 } = {}) {
   return {
     minute: 1440,
     status: 'finished',
@@ -35,10 +36,11 @@ function finished(stats, extra = {}, { ntdPerKWh = 1.5, gPerKWh = 0 } = {}) {
 }
 
 test('the score has three KPIs: reliability, cost and carbon', () => {
-  const score = computeScore(finished({ minutesNormal: 1440 }, {}, { ntdPerKWh: 3, gPerKWh: 450 }), config);
+  const mid = (bestNTDPerKWh + worstNTDPerKWh) / 2;
+  const score = computeScore(finished({ minutesNormal: 1440 }, {}, { ntdPerKWh: mid, gPerKWh: 450 }), config);
   assert.equal(score.kpis.reliability.score, 100);
-  assert.ok(Math.abs(score.kpis.cost.value - 3) < 1e-9);
-  assert.equal(score.kpis.cost.score, 50); // halfway between NT$1.5 and NT$4.5
+  assert.ok(Math.abs(score.kpis.cost.value - mid) < 1e-9);
+  assert.ok(Math.abs(score.kpis.cost.score - 50) < 1e-9); // halfway between best and worst
   assert.ok(Math.abs(score.kpis.carbon.value - 450) < 1e-9);
   assert.equal(score.kpis.carbon.score, 50); // halfway between 0 and 900 g/kWh
   assert.equal(score.points, 1000 * (0.5 * 100 + 0.25 * 50 + 0.25 * 50) / 100);

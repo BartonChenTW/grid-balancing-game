@@ -149,12 +149,15 @@ export function autopilot(state, world, cfg) {
     });
   }
 
-  // Surplus left over: curtail renewables.
+  // Surplus left over: curtail renewables. While curtailing, move only halfway
+  // to the new cap each minute: on a low-inertia grid a full step overshoots
+  // and the swings grow until the grid trips.
   const surplus = -gap;
   s.units.forEach((u, i) => {
     const type = types[u.type];
     if (!type.variable) return;
-    const cap = surplus > 0 ? Math.max(0, u.availableMW - surplus * (u.availableMW / Math.max(1, sumAvailable(s, types)))) : u.maxMW;
+    let cap = surplus > 0 ? Math.max(0, u.availableMW - surplus * (u.availableMW / Math.max(1, sumAvailable(s, types)))) : u.maxMW;
+    if (surplus > 0 && u.curtailedMW > 0) cap = u.outputMW + 0.5 * (cap - u.outputMW);
     s = setSetpoint(s, world, i, cap, cfg);
   });
 

@@ -1,24 +1,31 @@
 {
   "id": "taiwan-2050",
   "name": "Taiwan 2050",
-  "description": "Net-zero pathway: huge solar and wind (onshore and offshore), big batteries and flexible demand, and few spinning machines, so frequency moves fast.",
+  "description": "Net zero without nuclear, as in the Taiwan energy model: 80 GW of solar, 61 GW of mostly offshore wind, geothermal, and gas and ammonia turbines on imported fuel. Batteries are small, so sunset is the hard part.",
   "year": 2050,
-  "peakLoadMW": 62000,
+  "peakLoadMW": 66000,
   "dataStatus": "placeholder",
-  "dataNotes": "A what-if fleet, not an official plan. Peak load extends the official 1.7%/yr outlook growth from 2025 to 2050. Renewable share follows the 2050 net-zero pathway target of 60–70%; the capacity split and all unit parameters are illustrative. Gas units stand for low-carbon firm capacity (hydrogen-ready or with carbon capture).",
+  "dataNotes": "Capacities come from the Taiwan energy model's main 2050 run (official options, all imports, no new nuclear; PyPSA-Earth, daily steps, results of 2026-09-26). Gas CCGTs stand for the model's CCGTs, which there burn partly imported synthetic methane; the game counts them as natural gas. Coal (4 GW) is kept as a reserve that the model hardly uses. The model builds almost no batteries because daily steps undervalue them, so batteries use the official 5.5 GW target (4 hours); the model's 60 GW of vehicle-to-grid is left out. Peak load is the model's 2050 electricity generation (471 TWh) at the 2025 ratio of peak to average load. Unit counts and all unit parameters are illustrative.",
   "sources": [
-    { "what": "2050 net-zero pathway (renewable share)", "url": "https://ncsd.ndc.gov.tw/Fore/nsdn/about0/2050Path" },
-    { "what": "Demand growth outlook", "url": "https://data.gov.tw/dataset/16437" }
+    { "what": "Taiwan energy model: 2050 pathway (run official_imp)", "url": "https://github.com/BartonChenTW/taiwan-energy-model/blob/main/notes/TAIWAN_2050_PATHWAY.md" },
+    { "what": "Taiwan energy model: results data (docs/data/sector_pathway.json)", "url": "https://bartonchentw.github.io/taiwan-energy-model/" },
+    { "what": "Battery target, NDC action plan for grid and storage (2023), p. 15", "url": "https://github.com/BartonChenTW/taiwan-energy-model/blob/main/data/official/ndc2050_action_plan_grid_storage_2023.pdf" },
+    { "what": "Peak load 2025 (for the peak-to-average ratio)", "url": "https://data.gov.tw/dataset/8307" }
   ],
   "units": [
-    { "type": "gasCcgt", "name": "Gas/H₂ CCGT", "maxMW": 42000, "count": 60 },
-    { "type": "gasOcgt", "name": "Gas/H₂ peakers", "maxMW": 8000, "count": 20 },
-    { "type": "hydro", "maxMW": 2200, "energyMWh": 15000, "initialState": "online", "initialPct": 10 },
-    { "type": "pumpedHydro", "maxMW": 4600, "energyMWh": 27600, "initialSocPct": 60 },
-    { "type": "battery", "name": "Batteries", "maxMW": 20000, "energyMWh": 80000, "initialSocPct": 50 },
+    { "type": "coal", "name": "Coal (reserve)", "maxMW": 4000, "count": 6, "initialState": "standby" },
+    { "type": "gasCcgt", "maxMW": 15600, "count": 26 },
+    { "type": "ammoniaCcgt", "maxMW": 13190, "count": 22 },
+    { "type": "gasOcgt", "maxMW": 1790, "count": 9 },
+    { "type": "oil", "maxMW": 1280, "count": 3 },
+    { "type": "geothermal", "maxMW": 6200, "count": 31, "initialState": "online", "initialPct": 100 },
+    { "type": "biomass", "maxMW": 2020, "count": 20, "initialState": "online", "initialPct": 100 },
+    { "type": "hydro", "maxMW": 2140, "energyMWh": 15000, "initialState": "online", "initialPct": 10 },
+    { "type": "pumpedHydro", "maxMW": 2600, "energyMWh": 15600, "initialSocPct": 60 },
+    { "type": "battery", "maxMW": 5500, "energyMWh": 22000, "initialSocPct": 50 },
     { "type": "dsm", "maxMW": 4000, "maxActivationMin": 300 },
-    { "type": "solar", "maxMW": 60000 },
-    { "type": "wind", "maxMW": 40000, "offshoreShare": 0.95 }
+    { "type": "solar", "maxMW": 80000 },
+    { "type": "wind", "maxMW": 60900, "offshoreShare": 0.82 }
   ],
   "events": []
 }

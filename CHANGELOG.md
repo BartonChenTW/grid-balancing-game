@@ -4,6 +4,15 @@
 
 The version and release date are shown in the game's header, so you can check which version you are playing.
 
+## 0.7.0 — 2026-09-27
+
+- **Taiwan 2050 now follows the [Taiwan energy model](https://github.com/BartonChenTW/taiwan-energy-model)**, from its main 2050 run (net zero, no new nuclear, imported carbon-neutral fuels). It has 80 GW of solar, 61 GW of wind (82% offshore), 15.6 GW of gas and 13.2 GW of ammonia combined cycle, 6.2 GW of geothermal, 2 GW of biomass and 4 GW of coal kept on standby as a reserve. Peak load is about 66 GW. The model builds almost no batteries (its daily steps undervalue them), so batteries use the official 5.5 GW target. With less storage than before, sunset and calm summer nights are now the hard part.
+- **New fleet: Taiwan 2030**, the official plan from the MOEA supply-demand report (via the model): 32.4 GW gas, 9.7 GW coal, 31.2 GW solar, 11.9 GW wind (92% offshore), 1.2 GW geothermal, 0.8 GW biomass and 5.5 GW of batteries (official target). Peak load 45.2 GW.
+- **Fuel costs and CO₂ come from the model**: its 2030 fuel prices, efficiencies and running costs replace the placeholder costs (e.g. gas combined cycle NT$1.69/kWh instead of 3.20, coal NT$1.09 instead of 1.80). The cost score's range moves with them (NT$0.85–2.6/kWh), so a careful day scores about the same as before.
+- New technologies: **geothermal** (baseload), **biomass** and **ammonia turbines** (zero CO₂). They are also in the custom mix, and chart and fuel labels name them when a fleet has them.
+- If a fleet is short at midnight, batteries now discharge from the first minute.
+- Fix: scores played on a version without a git tag (0.6.2, 0.6.3) were rejected as “unknown game version”. The verifier now finds the version in the history of `main`.
+
 ## 0.6.3 — 2026-09-26
 
 - **Storage is now purple** in the chart and everywhere else, so it no longer looks like wind (both were green). The new colour was checked for colour-blind readers against every other series, in light and dark mode.

@@ -3,7 +3,10 @@ import assert from 'node:assert/strict';
 
 import { config } from '../js/config.js';
 import { createState, forecastVariable, frequencyBand, profileAt, setSetpoint, step } from '../js/sim.js';
-import { makeWorld, near, quiet, run, sandbox } from './helpers.js';
+import { TYPES, makeWorld, near, quiet, run, sandbox } from './helpers.js';
+
+const COAL = TYPES.coal;
+const PEAKER = TYPES.gasOcgt;
 
 const coal = (maxMW = 1000, extra = {}) => ({ type: 'coal', name: 'C', maxMW, initialState: 'online', ...extra });
 const gas = (maxMW = 1000, name = 'G') => ({ type: 'gasOcgt', name, maxMW, initialState: 'online' });
@@ -171,7 +174,7 @@ test('a demand surge raises demand while it lasts', () => {
 test('keeping units on standby costs money', () => {
   const world = makeWorld([coal(1000), { type: 'coal', name: 'Spare', maxMW: 700, initialState: 'standby' }], { loadMW: 600 });
   const state = run(createState(world, quiet), world, 60);
-  near(state.stats.costNTD, 600 * 1800 + 700 * 150, 1e-3);
+  near(state.stats.costNTD, 600 * COAL.costPerMWh + 700 * COAL.standbyCostPerMWh, 1e-3);
 });
 
 test('clouds reduce solar output while they pass', () => {
@@ -219,8 +222,8 @@ test('the day ends at 24:00', () => {
 test('stats count cost and CO₂ of generation', () => {
   const world = makeWorld([coal(1000)], { loadMW: 600 });
   const state = run(createState(world, quiet), world, 60);
-  near(state.stats.costNTD, 600 * 1800, 1e-3);
-  near(state.stats.co2Tonnes, 600 * 0.9, 1e-6);
+  near(state.stats.costNTD, 600 * COAL.costPerMWh, 1e-3);
+  near(state.stats.co2Tonnes, 600 * COAL.co2PerMWh, 1e-6);
 });
 
 test('fuel cost and CO₂ are split by fuel; intensity is CO₂ per kWh generated', () => {
@@ -231,12 +234,12 @@ test('fuel cost and CO₂ are split by fuel; intensity is CO₂ per kWh generate
   ], { loadMW: 900 });
   const state = createState(world, quiet);
   const [c, g] = state.units.map((u) => u.outputMW);
-  near(state.fuel.cost.coal, c * 1800, 1e-6);
-  near(state.fuel.cost.gas, g * 5000, 1e-6);
-  near(state.fuel.cost.oil, 500 * 150, 1e-6); // kept warm on standby
+  near(state.fuel.cost.coal, c * COAL.costPerMWh, 1e-6);
+  near(state.fuel.cost.gas, g * PEAKER.costPerMWh, 1e-6);
+  near(state.fuel.cost.oil, 500 * TYPES.oil.standbyCostPerMWh, 1e-6); // kept warm on standby
   near(state.fuel.co2.oil, 0);
-  near(state.co2IntensityKgPerKWh, (c * 0.9 + g * 0.55) / 900, 1e-9);
-  near(state.costNTDPerKWh, (c * 1800 + g * 5000 + 500 * 150) / 900 / 1000, 1e-9);
+  near(state.co2IntensityKgPerKWh, (c * COAL.co2PerMWh + g * PEAKER.co2PerMWh) / 900, 1e-9);
+  near(state.costNTDPerKWh, (c * COAL.costPerMWh + g * PEAKER.costPerMWh + 500 * TYPES.oil.standbyCostPerMWh) / 900 / 1000, 1e-9);
   const later = run(state, world, 60);
-  near(later.stats.costByFuel.gas, g * 5000, 1);
+  near(later.stats.costByFuel.gas, g * PEAKER.costPerMWh, 1);
 });

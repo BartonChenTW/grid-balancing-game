@@ -356,6 +356,17 @@ function initialDispatch(units, world, demandMW, cfg, state) {
     out[f.i] = { ...f.unit, outputMW: mw, setpointMW: mw };
   }
 
+  // Still short with every committed unit at full output (a calm night in a
+  // fleet with little firm capacity): online storage discharges to cover the rest.
+  let shortfall = residual - hi;
+  for (let i = 0; i < out.length && shortfall > 0; i++) {
+    const u = out[i];
+    if (!world.types[u.type].storage || u.status !== 'online') continue;
+    const mw = Math.min(shortfall, u.maxMW);
+    shortfall -= mw;
+    out[i] = { ...u, outputMW: mw, setpointMW: mw };
+  }
+
   let surplus = lo - residual;
   if (surplus > 0) {
     for (let i = 0; i < out.length && surplus > 0; i++) {

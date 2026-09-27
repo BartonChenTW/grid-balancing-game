@@ -1,0 +1,30 @@
+{
+  "id": "taiwan-2030",
+  "name": "Taiwan 2030",
+  "description": "The official plan: gas carries most of the load, coal shrinks to under 10 GW, solar doubles to 31 GW and offshore wind reaches 11 GW. Sunset and calm evenings test the gas fleet.",
+  "year": 2030,
+  "peakLoadMW": 45200,
+  "dataStatus": "placeholder",
+  "dataNotes": "Installed capacity is the planned 2030 fleet of the Taiwan energy model (data/fleet/custom_powerplants_tw2030.csv), built from the MOEA supply-demand report 113年度: the thermal schedule of Figure 3-3 and the renewable targets of Table 3-1. Batteries use the official 5.5 GW target for 2030 (2 hours); the model's fleet counts only the 0.85 GW already built. Peak load is the 2025 peak grown at the report's 2.1%/yr peak growth; the model's own 2030 run peaks at 45.8 GW (4-hour average). Demand response is kept at the 2025 size. Unit counts and all unit parameters are illustrative.",
+  "sources": [
+    { "what": "Taiwan energy model: planned 2030 fleet (data/fleet/custom_powerplants_tw2030.csv)", "url": "https://github.com/BartonChenTW/taiwan-energy-model/blob/main/data/fleet/custom_powerplants_tw2030.csv" },
+    { "what": "MOEA, supply-demand report 113年度 (thermal schedule, renewable targets, peak growth)", "url": "https://data.gov.tw/dataset/16437" },
+    { "what": "Battery target, NDC action plan for grid and storage (2023), p. 15", "url": "https://github.com/BartonChenTW/taiwan-energy-model/blob/main/data/official/ndc2050_action_plan_grid_storage_2023.pdf" },
+    { "what": "Peak load 2025", "url": "https://data.gov.tw/dataset/8307" }
+  ],
+  "units": [
+    { "type": "coal", "maxMW": 9709, "count": 14 },
+    { "type": "gasCcgt", "maxMW": 32396, "count": 54 },
+    { "type": "gasOcgt", "maxMW": 181, "count": 1 },
+    { "type": "oil", "maxMW": 1280, "count": 3 },
+    { "type": "geothermal", "maxMW": 1200, "count": 6, "initialState": "online", "initialPct": 100 },
+    { "type": "biomass", "maxMW": 810, "count": 8, "initialState": "online", "initialPct": 100 },
+    { "type": "hydro", "maxMW": 2140, "energyMWh": 15000, "initialState": "online", "initialPct": 10 },
+    { "type": "pumpedHydro", "maxMW": 2602, "energyMWh": 15600, "initialSocPct": 60 },
+    { "type": "battery", "maxMW": 5500, "energyMWh": 11000, "initialSocPct": 50 },
+    { "type": "dsm", "maxMW": 1500, "maxActivationMin": 240 },
+    { "type": "solar", "maxMW": 31200 },
+    { "type": "wind", "maxMW": 11879, "offshoreShare": 0.92 }
+  ],
+  "events": []
+}

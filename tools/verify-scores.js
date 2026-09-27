@@ -5,8 +5,8 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { join, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const BASE = (process.env.LEADERBOARD_URL ?? '').replace(/\/$/, '');
 const TOKEN = process.env.LEADERBOARD_ADMIN_TOKEN ?? '';
@@ -21,16 +21,48 @@ async function api(path, options = {}) {
   return res.json();
 }
 
-/** Game code and data for a version: the working tree for the current version, else its tag. */
+const git = (...args) => execFileSync('git', ['-C', ROOT, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+
+/**
+ * The git revision of a released version: its tag vX.Y.Z, or, without a tag,
+ * the last commit on the main line (first parents) whose package.json has
+ * that version. Null if neither exists.
+ */
+export function revisionOf(version) {
+  try {
+    git('rev-parse', '--verify', '--quiet', `refs/tags/v${version}`);
+    return `v${version}`;
+  } catch {
+    // No tag: search the history of package.json.
+  }
+  const commits = git('log', '--first-parent', '--format=%H', 'HEAD', '--', 'package.json').split('\n').filter(Boolean);
+  let newer = null;
+  for (const commit of commits) {
+    let at;
+    try {
+      at = JSON.parse(git('show', `${commit}:package.json`)).version;
+    } catch {
+      at = null;
+    }
+    // The version lasted until the next newer commit changed package.json.
+    if (at === version) return newer ? `${newer}^1` : 'HEAD';
+    newer = commit;
+  }
+  return null;
+}
+
+/** Game code and data for a version: the working tree for the current version, else its git revision. */
 const versions = new Map();
 async function loadVersion(version) {
   if (versions.has(version)) return versions.get(version);
   let dir = ROOT;
   const current = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version;
   if (version !== current) {
+    const revision = revisionOf(version);
+    if (!revision) throw new Error(`no tag or commit for version ${version}`);
     dir = mkdtempSync(join(tmpdir(), `ftl-v${version}-`));
     const tar = join(dir, 'src.tar');
-    execFileSync('git', ['-C', ROOT, 'archive', '--format=tar', '-o', tar, `v${version}`, 'js', 'data', 'package.json']);
+    execFileSync('git', ['-C', ROOT, 'archive', '--format=tar', '-o', tar, revision, 'js', 'data', 'package.json']);
     execFileSync('tar', ['-xf', tar, '-C', dir]);
   }
   if (!existsSync(join(dir, 'js', 'replay.js'))) throw new Error(`version ${version} has no replay support`);
@@ -96,7 +128,10 @@ async function main() {
   console.log(`Checked ${total} score(s).`);
 }
 
-main().catch((err) => {
-  console.error(err.message);
-  process.exitCode = 1;
-});
+const isMain = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isMain) {
+  main().catch((err) => {
+    console.error(err.message);
+    process.exitCode = 1;
+  });
+}

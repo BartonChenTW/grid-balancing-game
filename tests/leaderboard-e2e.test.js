@@ -106,6 +106,8 @@ test('submit → shows as checking → verifier replays → verified or rejected
     assert.deepEqual(board.find((s) => s.nickname === 'Honest').kpis, game.kpis);
     assert.equal(board.find((s) => s.nickname === 'Legacy').kpis, null);
     assert.equal((await fetch(`${base}/pending`)).status, 401); // admin only
+    assert.equal((await fetch(`${base}/missing-kpis`)).status, 401);
+    assert.equal((await fetch(`${base}/kpis`, { method: 'POST', body: '{}' })).status, 401);
 
     const out = await new Promise((resolve, reject) => {
       execFile(process.execPath, ['tools/verify-scores.js'], {
@@ -114,10 +116,18 @@ test('submit → shows as checking → verifier replays → verified or rejected
       }, (err, stdout, stderr) => (err ? reject(new Error(stderr || err.message)) : resolve(stdout)));
     });
     assert.match(out, /Checked 6 score/);
+    assert.match(out, /Filled in KPIs for 1 older score/);
 
     board = (await (await fetch(boardUrl)).json()).scores;
     assert.deepEqual(board.map((s) => s.nickname).sort(), ['Custom', 'Honest', 'Legacy'], 'rejected scores leave the board');
     assert.ok(board.every((s) => s.status === 'verified'));
+    // The score sent without KPIs got them from its replay.
+    assert.deepEqual(board.find((s) => s.nickname === 'Legacy').kpis, game.kpis);
+    // Filling in never overwrites KPIs a score already has.
+    const honestId = board.find((s) => s.nickname === 'Honest').id;
+    await fetch(`${base}/kpis`, { method: 'POST', headers: { Authorization: `Bearer ${env.ADMIN_TOKEN}` }, body: JSON.stringify({ items: [{ id: honestId, kpis: { reliability: 100, cost: 0, carbon: 0 } }] }) });
+    board = (await (await fetch(boardUrl)).json()).scores;
+    assert.deepEqual(board.find((s) => s.nickname === 'Honest').kpis, game.kpis);
     for (const nickname of ['Cheater', 'NoOptions', 'Fibber']) {
       const rejected = env.DB.raw.prepare('SELECT reason FROM scores WHERE nickname = ?').get(nickname);
       assert.match(rejected.reason, /replay gives/, nickname);

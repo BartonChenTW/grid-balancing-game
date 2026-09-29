@@ -4,6 +4,10 @@
 
 The version and release date are shown in the game's header, so you can check which version you are playing.
 
+## 0.9.1 — 2026-09-29
+
+- **Older leaderboard scores now show their KPIs too.** The verification job replays scores submitted before 0.9.0 from their saved moves and fills in their reliability, cost and CO₂ intensity.
+
 ## 0.9.0 — 2026-09-29
 
 - **The leaderboard shows the three KPIs** under each nickname: reliability (time in the normal band), generation cost (NT$/kWh) and CO₂ intensity (g/kWh), so you can see how a score was earned. They are checked by the same replay as the points. Scores submitted before this version show without them.

@@ -31,7 +31,7 @@ function cleanOptions(value) {
 const KPI_RANGES = { reliability: [0, 100], cost: [0, 1000], carbon: [0, 5000] }; // %, NT$/kWh, g/kWh
 
 /** The day's KPI values, or null when left out (older game versions). Returns undefined if invalid. */
-function cleanKpis(value) {
+export function cleanKpis(value) {
   if (value === undefined || value === null) return null;
   if (typeof value !== 'object' || Array.isArray(value)) return undefined;
   const kpis = {};

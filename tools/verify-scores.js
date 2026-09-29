@@ -80,39 +80,67 @@ async function loadVersion(version) {
   return game;
 }
 
-async function verify(entry) {
+/** Replays a stored game with its own version. Returns { score } or { error }. */
+async function replayEntry(entry) {
   let game;
   try {
     game = await loadVersion(entry.version);
-  } catch (err) {
-    return { id: entry.id, status: 'rejected', reason: `unknown game version ${entry.version}` };
+  } catch {
+    return { error: `unknown game version ${entry.version}` };
   }
   const scenarioFile = join(game.dir, 'data', 'scenarios', `${entry.scenario}.json`);
   const day = game.days.find((d) => d.id === entry.day);
-  if (!existsSync(scenarioFile) || !day) return { id: entry.id, status: 'rejected', reason: 'unknown fleet or day' };
+  if (!existsSync(scenarioFile) || !day) return { error: 'unknown fleet or day' };
   // Versions before options were recorded can only replay the difficulty's defaults.
-  if (entry.options && !game.replay.REPLAYS_OPTIONS) {
-    return { id: entry.id, status: 'rejected', reason: `version ${entry.version} cannot replay custom options` };
-  }
+  if (entry.options && !game.replay.REPLAYS_OPTIONS) return { error: `version ${entry.version} cannot replay custom options` };
   try {
     const scenario = JSON.parse(readFileSync(scenarioFile, 'utf8'));
     const { score } = game.replay.replayDay({
       scenario, day, types: game.types, difficulty: entry.difficulty, options: entry.options ?? undefined,
       seed: entry.seed, moves: entry.moves, cfg: game.config,
     });
-    if (score.points !== entry.points || score.stars !== entry.stars) {
-      return { id: entry.id, status: 'rejected', reason: `replay gives ${score.points} points, ${score.stars} stars` };
-    }
-    if (entry.kpis) {
-      const k = leaderboardKpis(score);
-      if (k.reliability !== entry.kpis.reliability || k.cost !== entry.kpis.cost || k.carbon !== entry.kpis.carbon) {
-        return { id: entry.id, status: 'rejected', reason: `replay gives KPIs ${k.reliability}% / NT${k.cost}/kWh / ${k.carbon} g/kWh` };
-      }
-    }
-    return { id: entry.id, status: 'verified' };
+    return { score };
   } catch (err) {
-    return { id: entry.id, status: 'rejected', reason: `replay failed: ${err.message}`.slice(0, 200) };
+    return { error: `replay failed: ${err.message}`.slice(0, 200) };
   }
+}
+
+async function verify(entry) {
+  const { score, error } = await replayEntry(entry);
+  if (error) return { id: entry.id, status: 'rejected', reason: error };
+  if (score.points !== entry.points || score.stars !== entry.stars) {
+    return { id: entry.id, status: 'rejected', reason: `replay gives ${score.points} points, ${score.stars} stars` };
+  }
+  if (entry.kpis) {
+    const k = leaderboardKpis(score);
+    if (k.reliability !== entry.kpis.reliability || k.cost !== entry.kpis.cost || k.carbon !== entry.kpis.carbon) {
+      return { id: entry.id, status: 'rejected', reason: `replay gives KPIs ${k.reliability}% / NT$${k.cost}/kWh / ${k.carbon} g/kWh` };
+    }
+  }
+  return { id: entry.id, status: 'verified' };
+}
+
+/** Verified scores saved without KPIs (before 0.9.0): replay them and fill the KPIs in. */
+async function backfillKpis() {
+  let filled = 0;
+  let after = 0;
+  for (let round = 0; round < 50; round++) {
+    const { scores } = await api(`/missing-kpis?after=${after}&limit=100`);
+    if (!scores.length) break;
+    const items = [];
+    for (const entry of scores) {
+      after = entry.id;
+      const { score, error } = await replayEntry(entry);
+      if (error || score.points !== entry.points) {
+        console.log(`#${entry.id}: KPIs not filled (${error ?? `replay gives ${score.points} points`})`);
+        continue;
+      }
+      items.push({ id: entry.id, kpis: leaderboardKpis(score) });
+    }
+    if (items.length) await api('/kpis', { method: 'POST', body: JSON.stringify({ items }) });
+    filled += items.length;
+  }
+  console.log(`Filled in KPIs for ${filled} older score(s).`);
 }
 
 async function main() {
@@ -134,6 +162,7 @@ async function main() {
     total += verdicts.length;
   }
   console.log(`Checked ${total} score(s).`);
+  await backfillKpis();
 }
 
 const isMain = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);

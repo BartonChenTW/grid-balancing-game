@@ -13,7 +13,8 @@ the leaderboard stays hidden until `leaderboard.url` is set in `js/config.js`.
 - `.github/workflows/verify-scores.yml` runs every 30 minutes: it fetches
   pending scores, replays each game with the exact game version it was played
   on (from that version's git tag) and marks it **verified** or **rejected**.
-  Rejected scores disappear from the board.
+  Rejected scores disappear from the board. It also replays verified scores
+  saved without KPIs (before 0.9.0) and fills their KPIs in.
 - `.github/workflows/deploy-leaderboard.yml` applies new database migrations
   and redeploys the Worker whenever `worker.js`, `validate.js`,
   `wrangler.toml` or `migrations/` change on `main`. New game versions alone

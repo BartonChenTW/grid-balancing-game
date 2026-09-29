@@ -6,13 +6,15 @@
 // Admin (Authorization: Bearer ADMIN_TOKEN), used by the verification job:
 //   GET    /pending?limit=                            pending scores with seed and moves
 //   POST   /verdicts  { verdicts: [{ id, status, reason }] }
+//   GET    /missing-kpis?after=&limit=               verified scores without KPIs, with seed and moves
+//   POST   /kpis      { items: [{ id, kpis }] }      fill in KPIs found by replay (never overwrites)
 //   DELETE /scores/:id                                remove a score (moderation)
 //
 // Stored per score: nickname, board (fleet, day, difficulty), options (assist,
 // accidents, Auto modes; null = the difficulty's defaults), game version,
 // seed, moves, points, stars, the three KPI values (reliability, cost,
 // carbon; null before 0.9.0), status. No email and no IP address.
-import { validateSubmission } from './validate.js';
+import { cleanKpis, validateSubmission } from './validate.js';
 
 const MAX_BODY_BYTES = 400_000;
 
@@ -106,6 +108,34 @@ async function pending(url, env, cors) {
   return json({ scores: results.map((r) => withKpis({ ...r, options: parseOptions(r.options), moves: JSON.parse(r.moves) })) }, 200, cors);
 }
 
+async function missingKpis(url, env, cors) {
+  const after = Math.max(0, Number(url.searchParams.get('after')) || 0);
+  const limit = Math.min(200, Math.max(1, Number(url.searchParams.get('limit')) || 50));
+  const { results } = await env.DB.prepare(
+    `SELECT id, scenario, day, difficulty, options, version, seed, moves, points, stars FROM scores
+     WHERE status = 'verified' AND reliability IS NULL AND id > ? ORDER BY id ASC LIMIT ?`,
+  ).bind(after, limit).all();
+  return json({ scores: results.map((r) => ({ ...r, options: parseOptions(r.options), moves: JSON.parse(r.moves) })) }, 200, cors);
+}
+
+async function fillKpis(request, env, cors) {
+  let body;
+  try {
+    body = await readJson(request);
+  } catch {
+    return json({ error: 'invalid JSON' }, 400, cors);
+  }
+  const list = Array.isArray(body?.items) ? body.items : [];
+  const statements = list
+    .map((item) => ({ id: item?.id, kpis: cleanKpis(item?.kpis) }))
+    .filter((item) => Number.isInteger(item.id) && item.kpis)
+    .map(({ id, kpis }) => env.DB.prepare(
+      'UPDATE scores SET reliability = ?, cost = ?, carbon = ? WHERE id = ? AND reliability IS NULL',
+    ).bind(kpis.reliability, kpis.cost, kpis.carbon, id));
+  if (statements.length) await env.DB.batch(statements);
+  return json({ updated: statements.length }, 200, cors);
+}
+
 async function verdicts(request, env, cors) {
   let body;
   try {
@@ -131,10 +161,12 @@ export default {
     try {
       if (url.pathname === '/scores' && request.method === 'GET') return await topScores(url, env, cors);
       if (url.pathname === '/scores' && request.method === 'POST') return await submit(request, env, cors);
-      if (url.pathname === '/pending' || url.pathname === '/verdicts' || request.method === 'DELETE') {
+      if (['/pending', '/verdicts', '/missing-kpis', '/kpis'].includes(url.pathname) || request.method === 'DELETE') {
         if (!isAdmin(request, env)) return json({ error: 'unauthorized' }, 401, cors);
         if (url.pathname === '/pending' && request.method === 'GET') return await pending(url, env, cors);
         if (url.pathname === '/verdicts' && request.method === 'POST') return await verdicts(request, env, cors);
+        if (url.pathname === '/missing-kpis' && request.method === 'GET') return await missingKpis(url, env, cors);
+        if (url.pathname === '/kpis' && request.method === 'POST') return await fillKpis(request, env, cors);
         const del = url.pathname.match(/^\/scores\/(\d+)$/);
         if (del && request.method === 'DELETE') {
           await env.DB.prepare('DELETE FROM scores WHERE id = ?').bind(Number(del[1])).run();

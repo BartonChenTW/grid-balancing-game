@@ -3,9 +3,10 @@
   "name": "Taiwan 2050",
   "description": "Net zero without nuclear, as in the Taiwan energy model: 80 GW of solar, 61 GW of mostly offshore wind, geothermal, and gas and ammonia turbines on imported fuel. Batteries are small, so sunset is the hard part.",
   "year": 2050,
-  "peakLoadMW": 66000,
+  "peakLoadMW": 61350,
+  "flatLoadMW": 20600,
   "dataStatus": "placeholder",
-  "dataNotes": "Capacities come from the Taiwan energy model's main 2050 run (official options, all imports, no new nuclear; PyPSA-Earth, daily steps, results of 2026-09-26). Gas CCGTs stand for the model's CCGTs, which there burn partly imported synthetic methane; the game counts them as natural gas. Coal (4 GW) is kept as a reserve that the model hardly uses. The model builds almost no batteries because daily steps undervalue them, so batteries use the official 5.5 GW target (4 hours); the model's 60 GW of vehicle-to-grid is left out. Peak load is the model's 2050 electricity generation (471 TWh) at the 2025 ratio of peak to average load. Unit counts and all unit parameters are illustrative.",
+  "dataNotes": "Capacities come from the Taiwan energy model's main 2050 run (official options, all imports, no new nuclear; PyPSA-Earth, daily steps, results of 2026-09-26). Gas CCGTs stand for the model's CCGTs, which there burn partly imported synthetic methane; the game counts them as natural gas. Coal (4 GW) is kept as a reserve that the model hardly uses. The model builds almost no batteries because daily steps undervalue them, so batteries use the official 5.5 GW target (4 hours); the model's 60 GW of vehicle-to-grid is left out. Demand is the model's 2050 electricity generation (471 TWh). The model grows electricity demand mainly for electronics (chip fabs, data centres), which run around the clock, so the growth over 2025 (about 180 TWh, 20.6 GW) is a flat load on top of the 2025 load shape (40.75 GW peak): peak load 61.35 GW. Unit counts and all unit parameters are illustrative.",
   "sources": [
     { "what": "Taiwan energy model: 2050 pathway (run official_imp)", "url": "https://github.com/BartonChenTW/taiwan-energy-model/blob/main/notes/TAIWAN_2050_PATHWAY.md" },
     { "what": "Taiwan energy model: results data (docs/data/sector_pathway.json)", "url": "https://bartonchentw.github.io/taiwan-energy-model/" },

@@ -8,6 +8,8 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import { leaderboardKpis } from '../js/score.js';
+
 const BASE = (process.env.LEADERBOARD_URL ?? '').replace(/\/$/, '');
 const TOKEN = process.env.LEADERBOARD_ADMIN_TOKEN ?? '';
 const ROOT = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
@@ -100,6 +102,12 @@ async function verify(entry) {
     });
     if (score.points !== entry.points || score.stars !== entry.stars) {
       return { id: entry.id, status: 'rejected', reason: `replay gives ${score.points} points, ${score.stars} stars` };
+    }
+    if (entry.kpis) {
+      const k = leaderboardKpis(score);
+      if (k.reliability !== entry.kpis.reliability || k.cost !== entry.kpis.cost || k.carbon !== entry.kpis.carbon) {
+        return { id: entry.id, status: 'rejected', reason: `replay gives KPIs ${k.reliability}% / NT${k.cost}/kWh / ${k.carbon} g/kWh` };
+      }
     }
     return { id: entry.id, status: 'verified' };
   } catch (err) {

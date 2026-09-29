@@ -19,7 +19,7 @@ Thanks for helping! This project is for learning, so clarity beats cleverness. Q
 - **All UI text goes in `js/strings.js`** and its translation `js/strings-zh-TW.js`, so both languages stay complete.
 - **Explain approximations.** When you simplify the physics, add a comment saying what is approximate.
 - Run `npm test` before sending a change. If you touch data or tuning, also run `node tools/balance-report.js` (and `easy`, `hard`) and check that every scenario × day is still winnable.
-- **Leaderboard scores are replayed.** A submitted score is checked by replaying its moves with the game version it was played on, so any change to how a day plays (simulation, data, scoring) needs a new version number (see Release). The Worker in `leaderboard/` needs redeploying only when `worker.js`, `validate.js` or `schema.sql` change; see [leaderboard/DEPLOY.md](leaderboard/DEPLOY.md).
+- **Leaderboard scores are replayed.** A submitted score is checked by replaying its moves with the game version it was played on, so any change to how a day plays (simulation, data, scoring) needs a new version number (see Release). The Worker in `leaderboard/` redeploys itself (GitHub Actions) when `worker.js`, `validate.js` or `migrations/` change on `main`; a database change is a new file in `leaderboard/migrations/`. See [leaderboard/DEPLOY.md](leaderboard/DEPLOY.md).
 
 ## Add or improve data
 

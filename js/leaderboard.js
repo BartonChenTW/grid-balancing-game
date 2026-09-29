@@ -72,6 +72,17 @@ export function renderBoard(list, scores, highlightId = null) {
       status.className = `lb-state lb-${s.status}`;
       status.textContent = s.status === 'verified' ? `✓ ${t('lb.verified')}` : t('lb.checking');
       li.append(rank, name, points, status);
+      if (s.kpis) {
+        const kpis = document.createElement('small');
+        kpis.className = 'lb-kpis';
+        kpis.title = t('lb.kpisHint');
+        kpis.textContent = [
+          `${formatNumber(s.kpis.reliability, 1)}%`,
+          t('fuel.costPerKWh', { v: formatNumber(s.kpis.cost, 2) }),
+          `${formatNumber(s.kpis.carbon)} g/kWh`,
+        ].join(' · ');
+        li.append(kpis);
+      }
       return li;
     }),
   );

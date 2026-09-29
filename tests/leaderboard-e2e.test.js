@@ -4,7 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { DatabaseSync } from 'node:sqlite';
 
@@ -13,7 +13,7 @@ import { config } from '../js/config.js';
 import { techAction } from '../js/fleet.js';
 import { ACTION_CODES } from '../js/replay.js';
 import { buildWorld } from '../js/scenarios.js';
-import { computeScore } from '../js/score.js';
+import { computeScore, leaderboardKpis } from '../js/score.js';
 import { createState, step } from '../js/sim.js';
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
@@ -21,7 +21,10 @@ const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf
 /** Minimal D1-compatible wrapper around node:sqlite. */
 function fakeD1() {
   const db = new DatabaseSync(':memory:');
-  db.exec(read('leaderboard/schema.sql'));
+  // The migrations in order, as `wrangler d1 migrations apply` runs them.
+  for (const file of readdirSync(new URL('../leaderboard/migrations/', import.meta.url)).sort()) {
+    db.exec(read(`leaderboard/migrations/${file}`));
+  }
   const statement = (sql, args = []) => ({
     bind: (...a) => statement(sql, a),
     all: async () => ({ results: db.prepare(sql).all(...args) }),
@@ -67,7 +70,7 @@ function playDay(options) {
   }
   const score = computeScore(state, config);
   const version = JSON.parse(read('package.json')).version;
-  return { scenario: 'taiwan-2016', day: day.id, difficulty: 'easy', options, version, seed, moves, points: score.points, stars: score.stars };
+  return { scenario: 'taiwan-2016', day: day.id, difficulty: 'easy', options, version, seed, moves, points: score.points, stars: score.stars, kpis: leaderboardKpis(score) };
 }
 
 test('submit → shows as checking → verifier replays → verified or rejected', async () => {
@@ -88,14 +91,20 @@ test('submit → shows as checking → verifier replays → verified or rejected
     assert.equal((await post({ ...custom, nickname: 'Custom' })).status, 201);
     // The same game claimed as played with the defaults does not replay to its score.
     assert.equal((await post({ ...custom, options: undefined, nickname: 'NoOptions' })).status, 201);
+    // Right points, but better KPIs than the replay gives.
+    assert.equal((await post({ ...game, nickname: 'Fibber', kpis: { ...game.kpis, carbon: Math.max(0, game.kpis.carbon - 100) } })).status, 201);
+    // Clients before 0.9.0 sent no KPIs: still verified, shown without them.
+    assert.equal((await post({ ...game, kpis: undefined, nickname: 'Legacy' })).status, 201);
     assert.equal((await post({ ...game, nickname: 'Honest' })).status, 429); // flood control
 
     const boardUrl = `${base}/scores?scenario=taiwan-2016&day=${game.day}&difficulty=easy`;
     let board = (await (await fetch(boardUrl)).json()).scores;
-    assert.equal(board.length, 4);
+    assert.equal(board.length, 6);
     assert.ok(board.every((s) => s.status === 'pending'));
     assert.deepEqual(board.find((s) => s.nickname === 'Custom').options, custom.options);
     assert.equal(board.find((s) => s.nickname === 'Honest').options, null);
+    assert.deepEqual(board.find((s) => s.nickname === 'Honest').kpis, game.kpis);
+    assert.equal(board.find((s) => s.nickname === 'Legacy').kpis, null);
     assert.equal((await fetch(`${base}/pending`)).status, 401); // admin only
 
     const out = await new Promise((resolve, reject) => {
@@ -104,15 +113,16 @@ test('submit → shows as checking → verifier replays → verified or rejected
         env: { ...process.env, LEADERBOARD_URL: base, LEADERBOARD_ADMIN_TOKEN: env.ADMIN_TOKEN },
       }, (err, stdout, stderr) => (err ? reject(new Error(stderr || err.message)) : resolve(stdout)));
     });
-    assert.match(out, /Checked 4 score/);
+    assert.match(out, /Checked 6 score/);
 
     board = (await (await fetch(boardUrl)).json()).scores;
-    assert.deepEqual(board.map((s) => s.nickname).sort(), ['Custom', 'Honest'], 'rejected scores leave the board');
+    assert.deepEqual(board.map((s) => s.nickname).sort(), ['Custom', 'Honest', 'Legacy'], 'rejected scores leave the board');
     assert.ok(board.every((s) => s.status === 'verified'));
-    for (const nickname of ['Cheater', 'NoOptions']) {
+    for (const nickname of ['Cheater', 'NoOptions', 'Fibber']) {
       const rejected = env.DB.raw.prepare('SELECT reason FROM scores WHERE nickname = ?').get(nickname);
       assert.match(rejected.reason, /replay gives/, nickname);
     }
+    assert.match(env.DB.raw.prepare("SELECT reason FROM scores WHERE nickname = 'Fibber'").get().reason, /KPIs/);
   } finally {
     server.close();
   }

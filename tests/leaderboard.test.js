@@ -61,6 +61,18 @@ test('options: optional, and when given all six must be valid', () => {
   }
 });
 
+test('kpis: optional, and when given all three must be numbers in range', () => {
+  assert.equal(validateSubmission(good).value.kpis, null);
+  const kpis = { reliability: 97.3, cost: 1.42, carbon: 452 };
+  assert.deepEqual(validateSubmission({ ...good, kpis }).value.kpis, kpis);
+  assert.deepEqual(validateSubmission({ ...good, kpis: { ...kpis, extra: 1 } }).value.kpis, kpis, 'unknown keys dropped');
+  for (const bad of [[], 'x', { ...kpis, reliability: 101 }, { ...kpis, cost: -1 }, { ...kpis, carbon: '452' }, { reliability: 90 }]) {
+    const r = validateSubmission({ ...good, kpis: bad });
+    assert.equal(r.ok, false, JSON.stringify(bad));
+    assert.match(r.error, /kpis/);
+  }
+});
+
 test('the verifier finds a version without a tag; an unknown version gives null', async () => {
   const { revisionOf } = await import('../tools/verify-scores.js');
   const { execFileSync } = await import('node:child_process');

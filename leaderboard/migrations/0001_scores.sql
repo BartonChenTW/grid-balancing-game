@@ -1,4 +1,5 @@
--- Follow the Load leaderboard (Cloudflare D1 / SQLite).
+-- Follow the Load leaderboard (Cloudflare D1 / SQLite): the table as of 0.6.2.
+-- Applied in order with `wrangler d1 migrations apply`; see DEPLOY.md.
 CREATE TABLE IF NOT EXISTS scores (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   created_at  TEXT    NOT NULL DEFAULT (datetime('now')),

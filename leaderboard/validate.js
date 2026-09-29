@@ -28,6 +28,21 @@ function cleanOptions(value) {
   return options;
 }
 
+const KPI_RANGES = { reliability: [0, 100], cost: [0, 1000], carbon: [0, 5000] }; // %, NT$/kWh, g/kWh
+
+/** The day's KPI values, or null when left out (older game versions). Returns undefined if invalid. */
+function cleanKpis(value) {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const kpis = {};
+  for (const [key, [min, max]] of Object.entries(KPI_RANGES)) {
+    const v = value[key];
+    if (typeof v !== 'number' || !Number.isFinite(v) || v < min || v > max) return undefined;
+    kpis[key] = v;
+  }
+  return kpis;
+}
+
 // Invisible and control characters: C0/C1 controls, zero-width and bidi marks,
 // line/paragraph separators, byte-order mark.
 const HIDDEN_RANGES = [[0x00, 0x1f], [0x7f, 0x9f], [0x200b, 0x200f], [0x2028, 0x202e], [0x2066, 0x2069], [0xfeff, 0xfeff]];
@@ -50,6 +65,8 @@ export function validateSubmission(body) {
   if (!DIFFICULTIES.includes(body.difficulty)) return { ok: false, error: 'invalid difficulty' };
   const options = cleanOptions(body.options);
   if (options === undefined) return { ok: false, error: 'invalid options' };
+  const kpis = cleanKpis(body.kpis);
+  if (kpis === undefined) return { ok: false, error: 'invalid kpis' };
   if (typeof body.version !== 'string' || !/^\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(body.version)) return { ok: false, error: 'invalid version' };
   if (!Number.isInteger(body.seed) || body.seed < 0 || body.seed > LIMITS.seedMax) return { ok: false, error: 'invalid seed' };
   if (!Number.isInteger(body.points) || body.points < 0 || body.points > LIMITS.pointsMax) return { ok: false, error: 'invalid points' };
@@ -76,6 +93,7 @@ export function validateSubmission(body) {
       seed: body.seed,
       points: body.points,
       stars: body.stars,
+      kpis,
       moves: body.moves,
     },
   };

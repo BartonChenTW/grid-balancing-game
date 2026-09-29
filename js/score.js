@@ -71,6 +71,21 @@ export function computeScore(state, cfg = defaultConfig) {
   };
 }
 
+const roundTo = (value, digits) => Math.round(value * 10 ** digits) / 10 ** digits;
+
+/**
+ * The three KPI values stored with a leaderboard score, rounded as the end
+ * screen shows them: reliability in % of the day in the normal band, cost in
+ * NT$/kWh, carbon in g CO₂/kWh. The verifier compares these after a replay.
+ */
+export function leaderboardKpis(score) {
+  return {
+    reliability: roundTo(score.kpis.reliability.value, 1),
+    cost: roundTo(score.kpis.cost.value, 2),
+    carbon: roundTo(score.kpis.carbon.value, 0),
+  };
+}
+
 function hourOf(minute) {
   return Math.floor(minute / 60) % 24;
 }

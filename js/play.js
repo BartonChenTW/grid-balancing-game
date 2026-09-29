@@ -5,7 +5,7 @@ import { capitalCost } from './economics.js';
 import { fetchTop, leaderboardEnabled, renderBoard, savedNickname, saveNickname, submitScore } from './leaderboard.js';
 import { ACTION_CODES, gameOptions } from './replay.js';
 import { reportCsv, reportHtml } from './report.js';
-import { computeScore, pickLesson } from './score.js';
+import { computeScore, leaderboardKpis, pickLesson } from './score.js';
 import { canTechAction, techAction, techSummary } from './fleet.js';
 import { createState, step } from './sim.js';
 import { formatBigMoneyRange, formatClock, formatDuration, formatEnergy, formatNumber, getLanguage, labelWithExtras, localName, t, unitName } from './strings.js';
@@ -724,6 +724,7 @@ export function createPlay({ cfg, onQuit, operator = null }) {
         moves,
         points: endReport.score.points,
         stars: endReport.score.stars,
+        kpis: leaderboardKpis(endReport.score),
       });
       $('end-lb-status').textContent = t('lb.submitted', { rank: r.rank });
       await showLeaderboard(endReport.score, r.id);

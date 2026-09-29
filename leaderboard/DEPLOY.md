@@ -73,6 +73,20 @@ curl -s "https://follow-the-load-leaderboard.<subdomain>.workers.dev/scores?scen
 8. Run the verification job once by hand to check it: Actions →
    “verify leaderboard scores” → Run workflow (or `gh workflow run verify-scores.yml`).
 
+## Updating the live Worker
+
+When `worker.js`, `validate.js` or `schema.sql` change, redeploy from a cloud
+session. If the release adds a file in `migrations/`, run it on the live
+database **first** (the new Worker reads the new columns), then deploy:
+
+```sh
+cd leaderboard
+npx wrangler@4 d1 execute follow-the-load --remote --file=migrations/0002-kpis.sql   # 0.9.0, once
+npx wrangler@4 deploy
+```
+
+`schema.sql` always holds the full current table, for a new database.
+
 ## Moderation
 
 Remove a score (e.g. an offensive nickname):
@@ -86,5 +100,6 @@ or delete the row in the Cloudflare dashboard (Storage & databases → D1 → fo
 ## Privacy
 
 Stored per score: nickname, fleet, day, difficulty, options, game version, seed, moves,
-points, stars and status. No email. Request logging is off (`[observability]
+points, stars, the three KPI values (reliability, cost, CO₂ intensity) and
+status. No email. Request logging is off (`[observability]
 enabled = false`), so the leaderboard keeps no IP addresses.

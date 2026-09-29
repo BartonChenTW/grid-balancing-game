@@ -4,6 +4,10 @@
 
 The version and release date are shown in the game's header, so you can check which version you are playing.
 
+## 0.9.0 — 2026-09-29
+
+- **The leaderboard shows the three KPIs** under each nickname: reliability (time in the normal band), generation cost (NT$/kWh) and CO₂ intensity (g/kWh), so you can see how a score was earned. They are checked by the same replay as the points. Scores submitted before this version show without them.
+
 ## 0.8.0 — 2026-09-27
 
 - **Real power stations in Taiwan 2025.** Every coal, gas and oil unit now has its real name and size from Taipower's unit list (Linkou 1, Taichung 5, Tatan 8…). Cards show the size range, and a trip names the unit that fell off. The fleet is now Taipower's own system, the one its peak load is measured on: 11.4 GW of coal and 22.3 GW of gas, instead of national totals that included industrial self-generation.

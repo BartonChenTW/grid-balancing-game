@@ -16,5 +16,6 @@ enabled = false
 binding = "DB"
 database_name = "follow-the-load"
 database_id = "6da5c7c9-93fd-4879-921e-6534e28bce84"
+migrations_dir = "migrations"
 
 # The admin token is a secret, set with:  npx wrangler secret put ADMIN_TOKEN

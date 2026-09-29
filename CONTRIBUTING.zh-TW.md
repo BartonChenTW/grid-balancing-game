@@ -19,7 +19,7 @@
 - **所有介面文字放在 `js/strings.js`** 與其翻譯 `js/strings-zh-TW.js`，讓兩種語言都保持完整。
 - **說明近似之處。** 簡化物理時，請加註解說明哪裡是近似。
 - 送出修改前請執行 `npm test`。若更動資料或參數，也請執行 `node tools/balance-report.js`（以及 `easy`、`hard`），確認每個情境 × 每一天仍然可以過關。
-- **排行榜分數會被重播。** 送出的分數會用當時的遊戲版本重播操作來驗證，因此任何改變一天玩法的修改（模擬、資料、計分）都需要新的版本號（見「發布新版本」）。`leaderboard/` 中的 Worker 只有在 `worker.js`、`validate.js` 或 `schema.sql` 變更時才需要重新部署；請見 [leaderboard/DEPLOY.md](leaderboard/DEPLOY.md)。
+- **排行榜分數會被重播。** 送出的分數會用當時的遊戲版本重播操作來驗證，因此任何改變一天玩法的修改（模擬、資料、計分）都需要新的版本號（見「發布新版本」）。`leaderboard/` 中的 Worker 在 `main` 上的 `worker.js`、`validate.js` 或 `migrations/` 變更時會自動重新部署（GitHub Actions）；資料庫變更請在 `leaderboard/migrations/` 新增一個檔案。請見 [leaderboard/DEPLOY.md](leaderboard/DEPLOY.md)。
 
 ## 新增或改進資料
 

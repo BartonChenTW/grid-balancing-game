@@ -1,7 +1,9 @@
 # Deploying the leaderboard
 
-Run these steps in a **Claude Code cloud session** (claude.ai/code) on this
-repository, not on a work computer. Nothing here is needed to play the game;
+After the first setup, the Worker deploys itself from GitHub Actions (see
+“Updating the live Worker”). Run the first setup in a **Claude Code cloud
+session** (claude.ai/code) or on a personal computer, not on a work computer.
+Nothing here is needed to play the game;
 the leaderboard stays hidden until `leaderboard.url` is set in `js/config.js`.
 
 ## How it works
@@ -12,19 +14,10 @@ the leaderboard stays hidden until `leaderboard.url` is set in `js/config.js`.
   pending scores, replays each game with the exact game version it was played
   on (from that version's git tag) and marks it **verified** or **rejected**.
   Rejected scores disappear from the board.
-- The Worker does not need redeploying for new game versions; only when
-  `worker.js`, `validate.js` or `schema.sql` change.
-
-## Updating an existing deployment
-
-Apply database changes before deploying the Worker that uses them:
-
-```sh
-cd leaderboard
-# 0.6.2 added the options column (a database created from schema.sql after that already has it):
-npx wrangler@4 d1 execute follow-the-load --remote --command "ALTER TABLE scores ADD COLUMN options TEXT"
-npx wrangler@4 deploy
-```
+- `.github/workflows/deploy-leaderboard.yml` applies new database migrations
+  and redeploys the Worker whenever `worker.js`, `validate.js`,
+  `wrangler.toml` or `migrations/` change on `main`. New game versions alone
+  need no redeploy.
 
 ## Before you start
 
@@ -45,8 +38,8 @@ cd leaderboard
 # 1. Create the database, then put its id into wrangler.toml (database_id).
 npx wrangler@4 d1 create follow-the-load
 
-# 2. Create the table.
-npx wrangler@4 d1 execute follow-the-load --remote --file=schema.sql
+# 2. Create the table (applies migrations/ in order).
+npx wrangler@4 d1 migrations apply follow-the-load --remote
 
 # 3. Admin token for the verification job: generate it and store it as a
 #    Worker secret without printing it.
@@ -75,17 +68,15 @@ curl -s "https://follow-the-load-leaderboard.<subdomain>.workers.dev/scores?scen
 
 ## Updating the live Worker
 
-When `worker.js`, `validate.js` or `schema.sql` change, redeploy from a cloud
-session. If the release adds a file in `migrations/`, run it on the live
-database **first** (the new Worker reads the new columns), then deploy:
+Automatic: merging a change to the Worker's files into `main` runs
+*deploy leaderboard* (`.github/workflows/deploy-leaderboard.yml`). It needs two
+repository secrets (Settings → Secrets and variables → Actions):
+`CLOUDFLARE_API_TOKEN` (the token above) and `CLOUDFLARE_ACCOUNT_ID`. To run
+it by hand: Actions → “deploy leaderboard” → Run workflow.
 
-```sh
-cd leaderboard
-npx wrangler@4 d1 execute follow-the-load --remote --file=migrations/0002-kpis.sql   # 0.9.0, once
-npx wrangler@4 deploy
-```
-
-`schema.sql` always holds the full current table, for a new database.
+A database change is a new numbered file in `migrations/` (e.g.
+`0003_something.sql`). Never edit a migration that has been applied: Cloudflare
+remembers which ones ran and applies only the new ones, before the deploy.
 
 ## Moderation
 

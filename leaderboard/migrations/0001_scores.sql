@@ -1,4 +1,5 @@
--- Follow the Load leaderboard (Cloudflare D1 / SQLite).
+-- Follow the Load leaderboard (Cloudflare D1 / SQLite): the table as of 0.6.2.
+-- Applied in order with `wrangler d1 migrations apply`; see DEPLOY.md.
 CREATE TABLE IF NOT EXISTS scores (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
@@ -12,9 +13,6 @@ CREATE TABLE IF NOT EXISTS scores (
   moves       TEXT    NOT NULL,          -- JSON [[minute, tech, code], ...]
   points      INTEGER NOT NULL,
   stars       INTEGER NOT NULL,
-  reliability REAL,                      -- % of the day in the normal band; NULL for scores from before 0.9.0
-  cost        REAL,                      -- average generation cost, NT$/kWh
-  carbon      REAL,                      -- average CO₂ intensity, g/kWh
   status      TEXT    NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'verified', 'rejected')),
   reason      TEXT,                      -- why a score was rejected
   verified_at TEXT

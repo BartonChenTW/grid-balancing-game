@@ -4,7 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { DatabaseSync } from 'node:sqlite';
 
@@ -21,7 +21,10 @@ const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), 'utf
 /** Minimal D1-compatible wrapper around node:sqlite. */
 function fakeD1() {
   const db = new DatabaseSync(':memory:');
-  db.exec(read('leaderboard/schema.sql'));
+  // The migrations in order, as `wrangler d1 migrations apply` runs them.
+  for (const file of readdirSync(new URL('../leaderboard/migrations/', import.meta.url)).sort()) {
+    db.exec(read(`leaderboard/migrations/${file}`));
+  }
   const statement = (sql, args = []) => ({
     bind: (...a) => statement(sql, a),
     all: async () => ({ results: db.prepare(sql).all(...args) }),

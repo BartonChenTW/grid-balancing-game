@@ -112,6 +112,9 @@ export function validateScenario(s, types) {
   if (!isObj(s)) return ['must be a JSON object'];
   for (const key of ['id', 'name']) if (typeof s[key] !== 'string' || !s[key]) problems.push(`"${key}" must be a non-empty string`);
   if (!isNum(s.peakLoadMW) || s.peakLoadMW <= 0) problems.push('"peakLoadMW" must be a positive number');
+  if (s.flatLoadMW !== undefined && (!isNum(s.flatLoadMW) || s.flatLoadMW < 0 || !(s.flatLoadMW < s.peakLoadMW))) {
+    problems.push('"flatLoadMW" must be a number from 0 to below peakLoadMW');
+  }
   if (!Array.isArray(s.units) || s.units.length === 0) {
     problems.push('"units" must be a non-empty array');
     return problems;
@@ -138,9 +141,36 @@ export function validateScenario(s, types) {
   return problems;
 }
 
-/** The day's peak demand for a fleet: its annual peak × the day's ratio, less planned rationing. */
+/**
+ * The day's demand for a fleet: { peakMW, load } with load as a fraction of
+ * peakMW. The fleet's flat load (flatLoadMW, e.g. round-the-clock industry)
+ * is the same every hour of every day; the rest of its annual peak follows the
+ * day's shape × the day's ratio. Planned rationing cuts both.
+ */
+export function dayDemand(scenario, day) {
+  const shape = normalise(day.load);
+  const keep = 1 - (day.rationingPct ?? 0) / 100;
+  const flat = scenario.flatLoadMW ?? 0;
+  if (!flat) return { peakMW: scenario.peakLoadMW * day.peakRatio * keep, load: shape };
+  const mw = shape.map((v) => ((scenario.peakLoadMW - flat) * day.peakRatio * v + flat) * keep);
+  const peakMW = Math.max(...mw);
+  return { peakMW, load: mw.map((v) => v / peakMW) };
+}
+
 export function dayPeakMW(scenario, day) {
-  return scenario.peakLoadMW * day.peakRatio * (1 - (day.rationingPct ?? 0) / 100);
+  return dayDemand(scenario, day).peakMW;
+}
+
+/** The day's highest demand minus what solar can give at that moment: what firm plants and storage face after sunset. */
+export function peakAfterSolarMW(scenario, day, cfg = defaultConfig) {
+  const { peakMW, load } = dayDemand(scenario, day);
+  const solarMW = scenario.units.filter((u) => u.type === 'solar').reduce((sum, u) => sum + u.maxMW, 0);
+  let worst = 0;
+  for (let minute = 0; minute < cfg.time.dayMinutes; minute += 10) {
+    const need = peakMW * profileAt(load, minute, cfg.time.dayMinutes) - solarMW * profileAt(day.solar, minute, cfg.time.dayMinutes);
+    worst = Math.max(worst, need);
+  }
+  return worst;
 }
 
 /**
@@ -385,6 +415,7 @@ export function buildWorld({ scenario, day, types, difficulty = 'normal', assist
   const expanded = expandUnits(scenario, types, options);
   const units = applyFuelLimits(expanded.units, types, day.fuelLimits);
   const { techs } = expanded;
+  const demand = dayDemand(scenario, day);
   const world = {
     scenarioId: scenario.id,
     dayId: day.id,
@@ -394,10 +425,10 @@ export function buildWorld({ scenario, day, types, difficulty = 'normal', assist
     techs,
     techNames: techs.map((t) => t.name),
     annualPeakMW: scenario.peakLoadMW,
-    peakLoadMW: dayPeakMW(scenario, day),
+    peakLoadMW: demand.peakMW,
     rationingPct: day.rationingPct ?? 0,
     fuelLimits: day.fuelLimits ?? {},
-    profiles: { load: normalise(day.load), solar: day.solar, wind: day.wind },
+    profiles: { load: demand.load, solar: day.solar, wind: day.wind },
     events: scheduled ? [...(day.events ?? []), ...(scenario.events ?? [])] : [],
     accidents: mode,
     randomAccidents: mode === 'random' || mode === 'both',

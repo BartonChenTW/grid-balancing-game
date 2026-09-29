@@ -2,7 +2,7 @@
 import { capitalCost } from './economics.js';
 import { fetchTop, leaderboardEnabled, renderBoard } from './leaderboard.js';
 import { isRankedScenario, usesDefaultOptions } from './replay.js';
-import { ACCIDENT_MODES, capacityByType, customScenario, dayPeakMW } from './scenarios.js';
+import { ACCIDENT_MODES, capacityByType, customScenario, dayPeakMW, peakAfterSolarMW } from './scenarios.js';
 import { formatBigMoney, formatBigMoneyRange, formatNumber, t, tOr, unitName } from './strings.js';
 
 const STORAGE_KEY = 'ftl.setup.v1';
@@ -250,7 +250,9 @@ export function createSetup({ data, cfg, onStart, onBack }) {
     const flex = total(groups.flex);
     const renewable = total(groups.renewable);
     const peak = dayPeakMW(scenario, day);
-    const margin = ((firm + flex - peak) / peak) * 100;
+    // Firm plants and storage must carry the demand solar cannot: usually the evening.
+    const need = peakAfterSolarMW(scenario, day, cfg);
+    const margin = need > 0 ? ((firm + flex - need) / need) * 100 : 100;
 
     const rows = el('dl', 'summary-rows');
     const add = (label, value) => {
@@ -273,6 +275,7 @@ export function createSetup({ data, cfg, onStart, onBack }) {
       }
     };
     add(t('setup.peakToday'), gw(peak));
+    add(t('setup.peakAfterSolar'), gw(need));
     add(t('setup.firm'), gw(firm));
     breakdown(groups.firm);
     add(t('setup.flexible'), gw(flex));
@@ -281,7 +284,7 @@ export function createSetup({ data, cfg, onStart, onBack }) {
     breakdown(groups.renewable);
     add(t('setup.margin'), `${margin >= 0 ? '+' : ''}${formatNumber(margin)}%`);
 
-    const scale = Math.max(firm + flex, peak) * 1.1 || 1;
+    const scale = Math.max(firm + flex, need) * 1.1 || 1;
     const meter = el('div', 'meter');
     const firmBar = el('span', 'm-firm');
     firmBar.style.width = `${(firm / scale) * 100}%`;
@@ -291,7 +294,7 @@ export function createSetup({ data, cfg, onStart, onBack }) {
     meter.append(firmBar, flexBar);
     const peakMark = el('div', 'meter-peak');
     const tick = el('i');
-    tick.style.left = `${(peak / scale) * 100}%`;
+    tick.style.left = `${(need / scale) * 100}%`;
     peakMark.append(tick);
     const legend = el('div', 'meter-legend');
     for (const [cls, label] of [['--series-hydro', t('setup.meterFirm')], ['--series-storage', t('setup.meterFlex')], ['--text', t('setup.meterPeak')]]) {
@@ -302,7 +305,7 @@ export function createSetup({ data, cfg, onStart, onBack }) {
       legend.append(item);
     }
     const nodes = [rows, meter, peakMark, legend];
-    if (firm + flex < peak) nodes.push(el('p', 'warning-text', t('setup.marginLow')));
+    if (firm + flex < need) nodes.push(el('p', 'warning-text', t('setup.marginLow')));
     $('summary').replaceChildren(...nodes);
 
     const notes = [];

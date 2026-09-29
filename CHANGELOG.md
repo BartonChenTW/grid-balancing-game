@@ -4,6 +4,11 @@
 
 The version and release date are shown in the game's header, so you can check which version you are playing.
 
+## 0.10.0 — 2026-09-29
+
+- **Taiwan 2050 demand is flatter and its peak lower (61.4 GW instead of 66 GW).** The extra demand over 2025 (about 180 TWh a year) comes mostly from chip fabs and data centres, which run around the clock, so it is now a flat 20.6 GW on top of today's daily curve instead of a scaled-up evening peak. The year's total stays at the model's 471 TWh. Summer evenings are still the hardest part of 2050, but no longer impossible.
+- The setup screen now compares firm plants and storage with the highest demand that solar cannot cover (usually the evening), instead of the midday peak that solar covers.
+
 ## 0.9.1 — 2026-09-29
 
 - **Older leaderboard scores now show their KPIs too.** The verification job replays scores submitted before 0.9.0 from their saved moves and fills in their reliability, cost and CO₂ intensity.

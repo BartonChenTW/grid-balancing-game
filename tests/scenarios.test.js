@@ -10,8 +10,10 @@ import {
   buildWorld,
   capacityByType,
   customScenario,
+  dayDemand,
   dayPeakMW,
   loadGameData,
+  peakAfterSolarMW,
   validateDays,
   validateScenario,
 } from '../js/scenarios.js';
@@ -225,6 +227,30 @@ test('LNG blockade day: only a share of the gas fleet has fuel, and demand is ra
   assert.equal(dayPeakMW(scenario, day), world.peakLoadMW);
   // Other fuels are untouched.
   assert.ok(world.units.filter((u) => u.type === 'coal').every((u) => !u.noFuel));
+});
+
+test('a flat load is the same every hour; the rest follows the day shape', async () => {
+  const { types, scenarios, days } = await loadGameData(readJson);
+  const scenario = scenarios.find((x) => x.id === 'taiwan-2050');
+  const day = days.find((d) => d.id === 'summerWeekday');
+  const flat = scenario.flatLoadMW;
+  assert.ok(flat > 0);
+  const { peakMW, load } = dayDemand(scenario, day);
+  assert.ok(Math.abs(peakMW - ((scenario.peakLoadMW - flat) * day.peakRatio + flat)) < 1e-6);
+  const shape = day.load.map((v) => v / Math.max(...day.load));
+  load.forEach((v, i) => assert.ok(Math.abs(v * peakMW - ((scenario.peakLoadMW - flat) * day.peakRatio * shape[i] + flat)) < 1e-6));
+  const world = buildWorld({ scenario, day, types, difficulty: 'normal' });
+  assert.equal(world.peakLoadMW, peakMW);
+  assert.deepEqual(world.profiles.load, load);
+  // Without a flat load the day is as before: the annual peak × the day's ratio, the day's own shape.
+  const today = scenarios.find((x) => x.id === 'taiwan-2025');
+  assert.equal(dayPeakMW(today, day), today.peakLoadMW * day.peakRatio);
+  assert.deepEqual(dayDemand(today, day).load, shape);
+  // Solar covers the midday peak, so firm plants face less than the peak.
+  const after = peakAfterSolarMW(scenario, day);
+  assert.ok(after > 0 && after < peakMW);
+  assert.match(validateScenario({ ...scenario, flatLoadMW: scenario.peakLoadMW }, types).join('\n'), /flatLoadMW/);
+  assert.match(validateScenario({ ...scenario, flatLoadMW: -1 }, types).join('\n'), /flatLoadMW/);
 });
 
 test('day fuel limits and rationing are checked', () => {

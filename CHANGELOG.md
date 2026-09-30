@@ -4,6 +4,12 @@
 
 The version and release date are shown in the game's header, so you can check which version you are playing.
 
+## 0.11.0 — 2026-09-30
+
+- **Taiwan 2050 has enough firm capacity for summer evenings.** Gas and ammonia now come from the Taiwan energy model's 4-hour run, which sees the evening peak (18.3 GW gas, 14.3 GW ammonia), plus 15% as a planning reserve for outages, maintenance and hot weather, Taiwan's reserve margin target: 21 GW of gas and 16.4 GW of ammonia combined cycle, 6.9 GW more than before. A calm summer weekday evening can now be carried without load shedding.
+- **New technologies: gas with carbon capture and hydrogen peakers.** In 2050 every gas combined cycle captures 95% of its CO₂ (about 19 g/kWh instead of 340, at a higher cost), and the gas peakers burn imported hydrogen (no CO₂, but expensive). Both are also in the custom mix.
+- Windy winter days in 2050 are still very sensitive, because few machines are spinning; that is next.
+
 ## 0.10.0 — 2026-09-29
 
 - **Taiwan 2050 demand is flatter and its peak lower (61.4 GW instead of 66 GW).** The extra demand over 2025 (about 180 TWh a year) comes mostly from chip fabs and data centres, which run around the clock, so it is now a flat 20.6 GW on top of today's daily curve instead of a scaled-up evening peak. The year's total stays at the model's 471 TWh. Summer evenings are still the hardest part of 2050, but no longer impossible.

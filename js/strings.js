@@ -161,6 +161,8 @@ const en = {
   'fuel.other': 'Hydro, DSM',
   // Added to a chart group or fuel label when the fleet has that type (labelWithExtras).
   'labelExtra.sep': ', ',
+  'labelExtra.gasCcgtCcs': 'carbon capture',
+  'labelExtra.h2Ocgt': 'hydrogen',
   'labelExtra.ammoniaCcgt': 'ammonia',
   'labelExtra.geothermal': 'geothermal',
   'labelExtra.biomass': 'biomass',
@@ -229,6 +231,8 @@ const en = {
   'unitType.coal': 'Coal',
   'unitType.gasCcgt': 'Gas (combined cycle)',
   'unitType.gasOcgt': 'Gas (peaker)',
+  'unitType.gasCcgtCcs': 'Gas with carbon capture (combined cycle)',
+  'unitType.h2Ocgt': 'Hydrogen (peaker)',
   'unitType.ammoniaCcgt': 'Ammonia (combined cycle)',
   'unitType.oil': 'Oil',
   'unitType.geothermal': 'Geothermal',

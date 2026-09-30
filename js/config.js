@@ -141,6 +141,8 @@ export const config = {
       { type: 'coal', maxGW: 30 },
       { type: 'gasCcgt', maxGW: 50 },
       { type: 'gasOcgt', maxGW: 15 },
+      { type: 'gasCcgtCcs', maxGW: 50 },
+      { type: 'h2Ocgt', maxGW: 15 },
       { type: 'ammoniaCcgt', maxGW: 40 },
       { type: 'oil', maxGW: 5 },
       { type: 'geothermal', maxGW: 10 },
@@ -184,7 +186,7 @@ export const config = {
     chartGroups: [
       { id: 'nuclear', types: ['nuclear'] },
       { id: 'coal', types: ['coal'] },
-      { id: 'gas', types: ['gasCcgt', 'gasOcgt', 'ammoniaCcgt'] },
+      { id: 'gas', types: ['gasCcgt', 'gasOcgt', 'gasCcgtCcs', 'h2Ocgt', 'ammoniaCcgt'] },
       { id: 'hydro', types: ['hydro'] },
       { id: 'wind', types: ['wind'] },
       { id: 'solar', types: ['solar'] },

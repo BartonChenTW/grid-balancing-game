@@ -10,6 +10,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232a78d6'/%3E%3Cpath d='M4 20c4 0 4-8 8-8s4 8 8 8 4-8 8-8' fill='none' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/style.css">
   <script type="module" src="js/main.js"></script>
+  <script data-goatcounter="https://grid-balancing-game.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 </head>
 <body>
   <a class="skip-link" href="#main" data-i18n="skip"></a>
@@ -204,6 +205,11 @@
         </div>
       </div>
 
+      <div class="ready" id="ready" hidden>
+        <p><strong data-i18n="ready.title"></strong> <span data-i18n="ready.text"></span></p>
+        <button type="button" class="primary" id="ready-start" data-i18n="ready.start"></button>
+      </div>
+
       <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
       <div class="play-grid">
@@ -286,6 +292,10 @@
         <h3 data-i18n="end.lesson"></h3>
         <p id="end-lesson"></p>
       </div>
+      <details class="end-events" id="end-events" open>
+        <summary id="end-events-title"></summary>
+        <ol class="log" id="end-log"></ol>
+      </details>
       <section class="lb" id="end-lb" hidden>
         <h3 data-i18n="lb.heading"></h3>
         <p class="lb-note" id="end-lb-note"></p>

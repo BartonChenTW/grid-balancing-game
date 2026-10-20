@@ -31,11 +31,11 @@ The game is in **English and Traditional Chinese (繁體中文)**: it follows th
 
 1. **About:** what the game is about and your goal.
 2. **Set up:** pick a fleet (Taiwan 2016, 2025, 2030, 2050, or your own mix), a day (summer or winter, weekday or weekend, Lunar New Year, typhoon, LNG blockade) and a difficulty. Options: accidents (none, scheduled, random, or both), the assist, and Auto modes for storage and demand response, load following (nuclear, coal, gas), hydro/solar/wind, and backup peakers, or “Auto for everything”.
-3. **Operate:** follow the demand forecast. Slow plants need hours to start; fast ones, storage and demand response handle the swings. Keep frequency in the green band until midnight.
+3. **Operate:** the day starts paused, so you can set up your power stations before starting the clock. Then follow the demand forecast. Slow plants need hours to start; fast ones, storage and demand response handle the swings. Keep frequency in the green band until midnight.
 
 The setup screen also shows the fleet’s **overall system cost** as a range: the capital cost of building it, levelised over each technology’s lifetime at a discount rate you can change (5–10%), in NT$ per year. Build costs, lifetimes and the ±30% uncertainty come from the [Taiwan PyPSA-Earth model](https://bartonchentw.github.io/pypsa-earth/) (technology-data 2030 projections); see [js/economics.js](js/economics.js).
 
-While you play, the side panel shows live CO₂ intensity and fuel cost bars, split by fuel, so you can see what burning more gas and oil does. At the end you get a score out of 1,000 from three KPIs: **reliability** (time in the normal frequency band, minus load shedding; 50%), **cost** (NT$/kWh; 25%) and **carbon** (g CO₂/kWh; 25%), plus the key numbers and a one-line lesson based on what happened.
+While you play, the side panel shows live CO₂ intensity and fuel cost bars, split by fuel, so you can see what burning more gas and oil does. At the end you get a score out of 1,000 from three KPIs: **reliability** (time in the normal frequency band, minus load shedding; 50%), **cost** (NT$/kWh; 25%) and **carbon** (g CO₂/kWh; 25%), plus the key numbers, a one-line lesson based on what happened and the day's control room messages.
 
 | Setup | Phone |
 |---|---|
@@ -59,6 +59,8 @@ These are deliberate simplifications for teaching: one node with no transmission
 ## Leaderboard
 
 Every game on a Taiwan fleet is ranked, on any difficulty, and can post a score with a nickname; scores played with options other than the difficulty’s defaults are tagged “custom options”. Scores show at once as “checking” and are verified by replaying the recorded moves in a GitHub Action (`tools/verify-scores.js`), using the game version they were played on. The backend is a small Cloudflare Worker with a D1 database in [leaderboard/](leaderboard/); see [leaderboard/DEPLOY.md](leaderboard/DEPLOY.md). Stored: nickname, score, settings and moves; no email and no IP addresses.
+
+Page visits are counted with [GoatCounter](https://www.goatcounter.com/), which sets no cookies and keeps no personal data.
 
 ## Data sources
 

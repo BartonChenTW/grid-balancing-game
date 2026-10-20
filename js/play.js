@@ -73,6 +73,8 @@ export function createPlay({ cfg, onQuit, operator = null }) {
   let logCount = 0;
   let toastTimer = null;
   let holdBlocked = false; // true while a dialog or the tutorial owns the screen
+  let heldSpeed = null; // speed to go back to when the tutorial closes
+  let waiting = false; // true until the player starts the clock, so they can set up the first minute
   const groupOf = {};
   cfg.ui.chartGroups.forEach((g) => g.types.forEach((type) => (groupOf[type] = g.id)));
   const pauseIndex = cfg.time.speeds.indexOf(0);
@@ -119,8 +121,11 @@ export function createPlay({ cfg, onQuit, operator = null }) {
 
   function setSpeed(index) {
     if (index === pauseIndex && speedIndex !== pauseIndex) resumeIndex = speedIndex;
+    if (index !== pauseIndex) waiting = false;
     speedIndex = index;
   }
+
+  $('ready-start').addEventListener('click', () => setSpeed(resumeIndex));
 
   function togglePause() {
     setSpeed(speedIndex === pauseIndex ? resumeIndex : pauseIndex);
@@ -523,6 +528,14 @@ export function createPlay({ cfg, onQuit, operator = null }) {
     }
   }
 
+  function logItem(e) {
+    const [text, note] = describeEvent(e);
+    const li = el('li');
+    li.append(el('time', '', formatClock(e.minute)), el('span', '', text));
+    if (note) li.append(el('span', 'log-note', note));
+    return li;
+  }
+
   function renderLog() {
     const log = state.eventLog;
     if (log.length === logCount) return;
@@ -530,13 +543,8 @@ export function createPlay({ cfg, onQuit, operator = null }) {
     if (logCount === 0) list.replaceChildren();
     for (let i = logCount; i < log.length; i++) {
       const e = log[i];
-      const [text, note] = describeEvent(e);
-      const li = el('li');
-      const time = el('time', '', formatClock(e.minute));
-      li.append(time, el('span', '', text));
-      if (note) li.append(el('span', 'log-note', note));
-      list.prepend(li);
-      if (e.type !== 'restore') showToast(text, note);
+      list.prepend(logItem(e));
+      if (e.type !== 'restore') showToast(...describeEvent(e));
     }
     logCount = log.length;
     updateLogToggle();
@@ -592,6 +600,7 @@ export function createPlay({ cfg, onQuit, operator = null }) {
     $('gauge').setAttribute('aria-valuenow', s.frequencyHz.toFixed(2));
     $('gauge').setAttribute('aria-valuetext', `${s.frequencyHz.toFixed(2)} Hz, ${t(`band.${s.band}`)}`);
     speedButtons.forEach((b, i) => b.setAttribute('aria-pressed', String(i === speedIndex)));
+    $('ready').hidden = !waiting;
   }
 
   function render() {
@@ -662,6 +671,10 @@ export function createPlay({ cfg, onQuit, operator = null }) {
       }),
     );
     $('end-lesson').textContent = t(lesson.key, lesson.vars);
+    // The day's messages in order, so the last ones are not lost behind the dialog.
+    const log = state.eventLog;
+    $('end-events-title').textContent = t('end.events', { n: log.length });
+    $('end-log').replaceChildren(...(log.length ? log.map(logItem) : [el('li', 'empty', t('events.empty'))]));
     endReport = { score, lesson, kpiRows, rows, blackout };
     showLeaderboard(score);
     $('end-overlay').hidden = false;
@@ -904,7 +917,11 @@ export function createPlay({ cfg, onQuit, operator = null }) {
     initialSeed = (Date.now() >>> 0) || 1;
     moves = [];
     state = createState(world, cfg, initialSeed);
-    speedIndex = cfg.time.defaultSpeedIndex;
+    // The day starts paused so the player can set up before the clock runs;
+    // the demo autopilot starts at once.
+    waiting = !operator;
+    resumeIndex = cfg.time.defaultSpeedIndex;
+    speedIndex = waiting ? pauseIndex : resumeIndex;
     stepCarry = 0;
     rendered = null;
     clearTimeout(toastTimer);
@@ -934,8 +951,10 @@ export function createPlay({ cfg, onQuit, operator = null }) {
   /** Pauses the game while something else (the tutorial) owns the screen. */
   function hold(on) {
     holdBlocked = on;
-    if (on) setSpeed(pauseIndex);
-    else setSpeed(resumeIndex);
+    if (on) {
+      heldSpeed = speedIndex;
+      setSpeed(pauseIndex);
+    } else setSpeed(heldSpeed ?? resumeIndex);
   }
 
   return { start, stop, hold, redrawChart: () => state && chart.draw(state, true) };
